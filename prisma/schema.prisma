@@ -1,0 +1,561 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== CONFERENCE DOMAIN ====================
+
+model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  email              String    @db.VarChar(255)
+  passwordHash       String    @map("password_hash") @db.VarChar(255)
+  name               String    @db.VarChar(100)
+  avatarUrl          String?   @map("avatar_url") @db.VarChar(500)
+  church             String?   @db.VarChar(200)
+  diocese            String?   @db.VarChar(200)
+  phone              String?   @db.VarChar(20)
+  role               Role      @default(ATTENDEE)
+  tribeId            String?   @map("tribe_id") @db.Uuid
+  levelId            String?   @map("level_id") @db.Uuid
+  totalXp            Int       @default(0) @map("total_xp")
+  status             UserStatus @default(ACTIVE)
+  languagePreference String    @default("en") @map("language_preference") @db.VarChar(5)
+  userQrToken        String    @default(uuid()) @map("user_qr_token") @db.Uuid
+  lastLoginAt        DateTime? @map("last_login_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  tribe              Tribe?    @relation(fields: [tribeId], references: [id], onDelete: SetNull)
+  level              Level?    @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  attendance         Attendance[]
+  xpTransactions     XpTransaction[] @relation("UserXpTransactions")
+  xpAwarded          XpTransaction[] @relation("AdminXpAwards")
+  quizSubmissions    QuizSubmission[]
+  bonusClaims        BonusClaim[]
+  bonusQrCreated     BonusQrCode[]
+  refreshTokens      RefreshToken[]
+  auditLogs          AuditLog[]
+  teamPlayer         TeamPlayer?
+  captainOf          SportsTeam?  @relation("TeamCaptain")
+  matchEvents        MatchEvent[]
+  playerStats        PlayerStats?
+  configUpdates      SystemConfig[]
+  publications       Publication[]
+
+  @@unique([email], map: "uq_users_email")
+  @@index([tribeId], map: "idx_users_tribe")
+  @@index([role], map: "idx_users_role")
+  @@index([userQrToken], map: "idx_users_qr_token")
+  @@index([totalXp(sort: Desc)], map: "idx_users_total_xp")
+  @@index([status], map: "idx_users_status")
+  @@map("users")
+}
+
+model Tribe {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  color       String?  @db.VarChar(7)
+  iconUrl     String?  @map("icon_url") @db.VarChar(500)
+  totalXp     Int      @default(0) @map("total_xp")
+  memberCount Int      @default(0) @map("member_count")
+  maxMembers  Int?     @map("max_members")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members     User[]
+
+  @@index([totalXp(sort: Desc)], map: "idx_tribes_total_xp")
+  @@map("tribes")
+}
+
+model ConferenceSession {
+  id                      String        @id @default(uuid()) @db.Uuid
+  title                   String        @db.VarChar(200)
+  description             String?       @db.Text
+  speaker                 String?       @db.VarChar(100)
+  location                String?       @db.VarChar(200)
+  sessionDate             DateTime      @map("session_date") @db.Date
+  startTime               DateTime      @map("start_time")
+  endTime                 DateTime      @map("end_time")
+  qrToken                 String        @unique @map("qr_token") @db.VarChar(100)
+  qrExpiresAt             DateTime?     @map("qr_expires_at")
+  xpReward                Int           @default(10) @map("xp_reward")
+  status                  SessionStatus @default(SCHEDULED)
+  maxCapacity             Int?          @map("max_capacity")
+  attendanceBufferMinutes Int           @default(10) @map("attendance_buffer_minutes")
+  createdAt               DateTime      @default(now()) @map("created_at")
+  updatedAt               DateTime      @updatedAt @map("updated_at")
+
+  attendance              Attendance[]
+  quizzes                 Quiz[]
+
+  @@index([sessionDate], map: "idx_sessions_date")
+  @@index([status], map: "idx_sessions_status")
+  @@index([startTime], map: "idx_sessions_start_time")
+  @@map("conference_sessions")
+}
+
+model Attendance {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  scannedAt DateTime @default(now()) @map("scanned_at")
+  xpAwarded Int      @map("xp_awarded")
+  isLate    Boolean  @default(false) @map("is_late")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session   ConferenceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId], map: "uq_attendance_user_session")
+  @@index([sessionId], map: "idx_attendance_session")
+  @@index([userId], map: "idx_attendance_user")
+  @@map("attendance")
+}
+
+model XpTransaction {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  amount      Int
+  type        XpType
+  sourceType  XpSourceType @map("source_type")
+  sourceId    String?  @map("source_id") @db.Uuid
+  description String?  @db.VarChar(500)
+  awardedBy   String?  @map("awarded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation("UserXpTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  awardedByUser User?  @relation("AdminXpAwards", fields: [awardedBy], references: [id], onDelete: SetNull)
+  bonusClaim  BonusClaim?
+
+  @@index([userId], map: "idx_xp_user")
+  @@index([userId, createdAt(sort: Desc)], map: "idx_xp_user_created")
+  @@index([type], map: "idx_xp_type")
+  @@index([sourceType, sourceId], map: "idx_xp_source")
+  @@index([createdAt(sort: Desc)], map: "idx_xp_created_at")
+  @@index([awardedBy], map: "idx_xp_awarded_by")
+  @@map("xp_transactions")
+}
+
+model Level {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @unique @db.VarChar(50)
+  displayOrder Int      @unique @map("display_order")
+  minXp        Int      @map("min_xp")
+  maxXp        Int?     @map("max_xp")
+  badgeUrl     String?  @map("badge_url") @db.VarChar(500)
+  color        String?  @db.VarChar(7)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+
+  @@index([minXp], map: "idx_levels_min_xp")
+  @@map("levels")
+}
+
+model Quiz {
+  id               String     @id @default(uuid()) @db.Uuid
+  title            String     @db.VarChar(200)
+  description      String?    @db.Text
+  sessionId        String?    @map("session_id") @db.Uuid
+  xpReward         Int        @default(0) @map("xp_reward")
+  passingScore     Int?       @map("passing_score")
+  timeLimitSeconds Int?       @map("time_limit_seconds")
+  status           QuizStatus @default(DRAFT)
+  questionCount    Int        @default(0) @map("question_count")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  session          ConferenceSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  questions        QuizQuestion[]
+  submissions      QuizSubmission[]
+
+  @@index([status], map: "idx_quizzes_status")
+  @@index([sessionId], map: "idx_quizzes_session")
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String       @id @default(uuid()) @db.Uuid
+  quizId        String       @map("quiz_id") @db.Uuid
+  questionText  String       @map("question_text") @db.Text
+  questionType  QuestionType @default(MULTIPLE_CHOICE) @map("question_type")
+  options       Json?
+  correctAnswer String       @map("correct_answer") @db.Text
+  points        Int          @default(1)
+  displayOrder  Int          @map("display_order")
+  explanation   String?      @db.Text
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId], map: "idx_questions_quiz")
+  @@index([quizId, displayOrder], map: "idx_questions_order")
+  @@map("quiz_questions")
+}
+
+model QuizSubmission {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  quizId           String   @map("quiz_id") @db.Uuid
+  answers          Json
+  score            Int
+  maxScore         Int      @map("max_score")
+  percentage       Decimal  @db.Decimal(5, 2)
+  passed           Boolean
+  xpAwarded        Int      @default(0) @map("xp_awarded")
+  startedAt        DateTime? @map("started_at")
+  submittedAt      DateTime @default(now()) @map("submitted_at")
+  timeTakenSeconds Int?     @map("time_taken_seconds")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId], map: "uq_quiz_submission_user_quiz")
+  @@index([quizId], map: "idx_submissions_quiz")
+  @@index([userId], map: "idx_submissions_user")
+  @@map("quiz_submissions")
+}
+
+model BonusQrCode {
+  id          String    @id @default(uuid()) @db.Uuid
+  token       String    @unique @default(uuid()) @db.Uuid
+  amount      Int
+  label       String?   @db.VarChar(200)
+  maxClaims   Int?      @map("max_claims")
+  claimsCount Int       @default(0) @map("claims_count")
+  isActive    Boolean   @default(true) @map("is_active")
+  expiresAt   DateTime? @map("expires_at")
+  batchId     String?   @map("batch_id") @db.Uuid
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  creator     User      @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  claims      BonusClaim[]
+
+  @@index([isActive, expiresAt], map: "idx_bonus_qr_active")
+  @@index([batchId], map: "idx_bonus_qr_batch")
+  @@index([createdBy], map: "idx_bonus_qr_created_by")
+  @@map("bonus_qr_codes")
+}
+
+model BonusClaim {
+  id              String   @id @default(uuid()) @db.Uuid
+  bonusQrId       String   @map("bonus_qr_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  xpTransactionId String   @unique @map("xp_transaction_id") @db.Uuid
+  claimedAt       DateTime @default(now()) @map("claimed_at")
+
+  bonusQr         BonusQrCode   @relation(fields: [bonusQrId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xpTransaction   XpTransaction @relation(fields: [xpTransactionId], references: [id], onDelete: Cascade)
+
+  @@unique([bonusQrId, userId], map: "uq_bonus_claim_user")
+  @@index([userId], map: "idx_bonus_claims_user")
+  @@index([bonusQrId], map: "idx_bonus_claims_qr")
+  @@map("bonus_claims")
+}
+
+// ==================== SPORTS DOMAIN ====================
+
+model SportsTeam {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @unique @db.VarChar(100)
+  logoUrl        String?  @map("logo_url") @db.VarChar(500)
+  color          String?  @db.VarChar(7)
+  captainId      String?  @unique @map("captain_id") @db.Uuid
+  matchesPlayed  Int      @default(0) @map("matches_played")
+  wins           Int      @default(0)
+  draws          Int      @default(0)
+  losses         Int      @default(0)
+  goalsFor       Int      @default(0) @map("goals_for")
+  goalsAgainst   Int      @default(0) @map("goals_against")
+  goalDifference Int      @default(0) @map("goal_difference")
+  points         Int      @default(0)
+  rank           Int?
+  maxRosterSize  Int      @default(15) @map("max_roster_size")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  captain        User?    @relation("TeamCaptain", fields: [captainId], references: [id], onDelete: SetNull)
+  players        TeamPlayer[]
+  homeMatches    Match[]  @relation("HomeTeam")
+  awayMatches    Match[]  @relation("AwayTeam")
+  matchEvents    MatchEvent[]
+  playerStats    PlayerStats[]
+
+  @@index([points(sort: Desc), goalDifference(sort: Desc), goalsFor(sort: Desc)], map: "idx_teams_points")
+  @@index([captainId], map: "idx_teams_captain")
+  @@map("sports_teams")
+}
+
+model TeamPlayer {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  teamId       String   @map("team_id") @db.Uuid
+  jerseyNumber Int?     @map("jersey_number")
+  position     PlayerPosition?
+  isCaptain    Boolean  @default(false) @map("is_captain")
+  joinedAt     DateTime @default(now()) @map("joined_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team         SportsTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId], map: "idx_players_team")
+  @@map("team_players")
+}
+
+model Match {
+  id          String      @id @default(uuid()) @db.Uuid
+  homeTeamId  String      @map("home_team_id") @db.Uuid
+  awayTeamId  String      @map("away_team_id") @db.Uuid
+  scheduledAt DateTime    @map("scheduled_at")
+  venue       String?     @db.VarChar(200)
+  round       Int?
+  groupName   String?     @map("group_name") @db.VarChar(50)
+  status      MatchStatus @default(SCHEDULED)
+  homeScore   Int?        @map("home_score")
+  awayScore   Int?        @map("away_score")
+  winXp       Int         @default(20) @map("win_xp")
+  drawXp      Int         @default(10) @map("draw_xp")
+  lossXp      Int         @default(5) @map("loss_xp")
+  notes       String?     @db.Text
+  completedAt DateTime?   @map("completed_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  homeTeam    SportsTeam  @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam    SportsTeam  @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  events      MatchEvent[]
+
+  @@index([homeTeamId], map: "idx_matches_home_team")
+  @@index([awayTeamId], map: "idx_matches_away_team")
+  @@index([status], map: "idx_matches_status")
+  @@index([scheduledAt], map: "idx_matches_scheduled")
+  @@map("matches")
+}
+
+model MatchEvent {
+  id        String    @id @default(uuid()) @db.Uuid
+  matchId   String    @map("match_id") @db.Uuid
+  playerId  String    @map("player_id") @db.Uuid
+  teamId    String    @map("team_id") @db.Uuid
+  eventType EventType @map("event_type")
+  minute    Int
+  notes     String?   @db.VarChar(500)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  match     Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    User       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team      SportsTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([matchId], map: "idx_events_match")
+  @@index([playerId], map: "idx_events_player")
+  @@index([matchId, minute], map: "idx_events_match_minute")
+  @@map("match_events")
+}
+
+model PlayerStats {
+  id            String     @id @default(uuid()) @db.Uuid
+  userId        String     @unique @map("user_id") @db.Uuid
+  teamId        String     @map("team_id") @db.Uuid
+  matchesPlayed Int        @default(0) @map("matches_played")
+  goals         Int        @default(0)
+  assists       Int        @default(0)
+  yellowCards   Int        @default(0) @map("yellow_cards")
+  redCards      Int        @default(0) @map("red_cards")
+  minutesPlayed Int        @default(0) @map("minutes_played")
+  cleanSheets   Int        @default(0) @map("clean_sheets")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team          SportsTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([goals(sort: Desc)], map: "idx_stats_goals")
+  @@index([teamId], map: "idx_stats_team")
+  @@map("player_stats")
+}
+
+// ==================== PLATFORM DOMAIN ====================
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  deviceInfo String?   @map("device_info") @db.VarChar(500)
+  ipAddress  String?   @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_refresh_user")
+  @@index([expiresAt], map: "idx_refresh_expires")
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(50)
+  resource   String   @db.VarChar(50)
+  resourceId String?  @map("resource_id") @db.Uuid
+  metadata   Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  status     String   @default("SUCCESS") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId], map: "idx_audit_actor")
+  @@index([action], map: "idx_audit_action")
+  @@index([resource, resourceId], map: "idx_audit_resource")
+  @@index([createdAt(sort: Desc)], map: "idx_audit_created")
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100)
+  value       Json
+  description String?  @db.VarChar(500)
+  category    String   @default("GENERAL") @db.VarChar(50)
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  updater     User?    @relation(fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@index([category], map: "idx_config_category")
+  @@map("system_config")
+}
+
+// ==================== PUBLICATIONS ====================
+
+model PublicationCategory {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String        @unique @db.VarChar(50)
+  labelEn     String        @map("label_en") @db.VarChar(100)
+  labelAr     String        @map("label_ar") @db.VarChar(100)
+  color       String        @default("#6366F1") @db.VarChar(20)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  publications Publication[]
+
+  @@map("publication_categories")
+}
+
+model Publication {
+  id          String            @id @default(uuid()) @db.Uuid
+  title       String            @db.VarChar(200)
+  description String?           @db.Text
+  categoryId  String            @map("category_id") @db.Uuid
+  contentUrl  String            @map("content_url") @db.VarChar(500)
+  coverUrl    String?           @map("cover_url") @db.VarChar(500)
+  fileSize    Int?              @map("file_size")
+  published   Boolean           @default(false)
+  publishedAt DateTime?         @map("published_at")
+  createdBy   String            @map("created_by") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  creator     User              @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  category    PublicationCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId], map: "idx_publications_category")
+  @@index([published, publishedAt(sort: Desc)], map: "idx_publications_published")
+  @@map("publications")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  ATTENDEE
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum XpType {
+  ATTENDANCE
+  PARTICIPATION
+  QUIZ
+  CHALLENGE
+  BONUS
+  SPORTS
+  MANUAL
+  PENALTY
+  REWARD
+}
+
+enum XpSourceType {
+  SESSION
+  QUIZ
+  CHALLENGE
+  ADMIN
+  BONUS_QR
+  STAFF_AWARD
+  SPORTS
+}
+
+enum QuizStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum PlayerPosition {
+  GK
+  DEF
+  MID
+  FWD
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventType {
+  GOAL
+  ASSIST
+  YELLOW_CARD
+  RED_CARD
+  SUBSTITUTION
+}
+

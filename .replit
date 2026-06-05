@@ -1,0 +1,18 @@
+entrypoint = "src/app.ts"
+run = "npm run dev"
+
+[nix]
+channel = "unstable"
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"
+DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/ikigai_quest"
+JWT_SECRET = "ikigai-quest-secret-key-change-this"
+
+[packager]
+language = "nodejs"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
