@@ -47,3 +47,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "DATABASE_URL=postgresql://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE ./node_modules/.bin/tsx watch src/app.ts"
 waitForPort = 3000
+
+[agent]
+expertMode = true
