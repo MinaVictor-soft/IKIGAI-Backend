@@ -1,5 +1,6 @@
 entrypoint = "src/app.ts"
 run = "npm run dev"
+modules = ["nodejs-20"]
 
 [nix]
 channel = "unstable"
@@ -16,3 +17,33 @@ language = "nodejs"
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+NODE_ENV = "development"
+JWT_SECRET = "ikigai-quest-secret-key-change-in-production"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "DATABASE_URL=postgresql://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE ./node_modules/.bin/tsx watch src/app.ts"
+waitForPort = 3000
