@@ -199,10 +199,52 @@ export class QuizService {
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
     if (!quiz) throw new AppError(404, 'QUIZ_NOT_FOUND', 'Quiz not found');
 
-    return prisma.quiz.update({
+    const updatedQuiz = await prisma.quiz.update({
       where: { id: quizId },
       data: { status },
     });
+
+    // If publishing quiz from DRAFT to ACTIVE, notify all users
+    if (quiz.status === 'DRAFT' && status === 'ACTIVE') {
+      try {
+        const users = await prisma.user.findMany({
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        });
+
+        const userIds = users.map(u => u.id);
+        if (userIds.length > 0) {
+          await notificationsService.createBulkNotifications(
+            userIds,
+            'QUIZ_CREATED',
+            '🎯 مسابقة جديدة!',
+            `${updatedQuiz.title} • ${updatedQuiz.xpReward} XP`,
+            {
+              quizId: updatedQuiz.id,
+              title: updatedQuiz.title,
+              xpReward: updatedQuiz.xpReward,
+            }
+          );
+
+          // Send push notifications
+          await pushNotificationsService.sendBroadcastNotification(
+            '🎯 مسابقة جديدة!',
+            `${updatedQuiz.title} • ${updatedQuiz.xpReward} XP`,
+            {
+              quizId: updatedQuiz.id,
+              title: updatedQuiz.title,
+              xpReward: updatedQuiz.xpReward,
+              type: 'QUIZ_CREATED',
+            }
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail quiz status update
+        console.error('Error creating notifications when publishing quiz:', error);
+      }
+    }
+
+    return updatedQuiz;
   }
 
   async getMySubmissions(userId: string) {

@@ -9,6 +9,8 @@ const uuid_1 = require("uuid");
 const database_1 = __importDefault(require("../../config/database"));
 const env_1 = require("../../config/env");
 const errorHandler_1 = require("../../middleware/errorHandler");
+const notifications_service_1 = require("../notifications/notifications.service");
+const push_notifications_service_1 = require("../push-notifications/push-notifications.service");
 class AdminService {
     // ============ SESSIONS ============
     async createSession(input) {
@@ -73,10 +75,40 @@ class AdminService {
         if (status === 'COMPLETED' || status === 'CANCELLED') {
             data.qrToken = (0, uuid_1.v4)(); // Invalidate QR
         }
-        return database_1.default.conferenceSession.update({
+        const updatedSession = await database_1.default.conferenceSession.update({
             where: { id: sessionId },
             data,
         });
+        // Create notifications when session is activated/published
+        if (status === 'ACTIVE' && session.status !== 'ACTIVE') {
+            try {
+                const users = await database_1.default.user.findMany({
+                    where: { status: 'ACTIVE' },
+                    select: { id: true },
+                });
+                const userIds = users.map(u => u.id);
+                if (userIds.length > 0) {
+                    await notifications_service_1.notificationsService.createBulkNotifications(userIds, 'EVENT_CREATED', '📅 جلسة جديدة!', `${updatedSession.title} • ${new Date(updatedSession.startTime).toLocaleString('ar-EG')}`, {
+                        sessionId: updatedSession.id,
+                        title: updatedSession.title,
+                        startTime: updatedSession.startTime,
+                        speaker: updatedSession.speaker,
+                    });
+                    // Send push notifications
+                    await push_notifications_service_1.pushNotificationsService.sendBroadcastNotification('📅 جلسة جديدة!', `${updatedSession.title} • ${new Date(updatedSession.startTime).toLocaleString('ar-EG')}`, {
+                        sessionId: updatedSession.id,
+                        title: updatedSession.title,
+                        startTime: updatedSession.startTime,
+                        speaker: updatedSession.speaker,
+                        type: 'EVENT_CREATED',
+                    });
+                }
+            }
+            catch (error) {
+                console.error('Error creating notifications when publishing session:', error);
+            }
+        }
+        return updatedSession;
     }
     async regenerateQrToken(sessionId) {
         const session = await database_1.default.conferenceSession.findUnique({ where: { id: sessionId } });

@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import prisma from '../../config/database';
 import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
+import { notificationsService } from '../notifications/notifications.service';
+import { pushNotificationsService } from '../push-notifications/push-notifications.service';
 import { CreateSessionInput, CreateUserInput, CreateTribeInput } from './admin.schema';
 
 export class AdminService {
@@ -66,10 +68,53 @@ export class AdminService {
       data.qrToken = uuidv4(); // Invalidate QR
     }
 
-    return prisma.conferenceSession.update({
+    const updatedSession = await prisma.conferenceSession.update({
       where: { id: sessionId },
       data,
     });
+
+    // Create notifications when session is activated/published
+    if (status === 'ACTIVE' && session.status !== 'ACTIVE') {
+      try {
+        const users = await prisma.user.findMany({
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        });
+
+        const userIds = users.map(u => u.id);
+        if (userIds.length > 0) {
+          await notificationsService.createBulkNotifications(
+            userIds,
+            'EVENT_CREATED',
+            '📅 جلسة جديدة!',
+            `${updatedSession.title} • ${new Date(updatedSession.startTime).toLocaleString('ar-EG')}`,
+            {
+              sessionId: updatedSession.id,
+              title: updatedSession.title,
+              startTime: updatedSession.startTime,
+              speaker: updatedSession.speaker,
+            }
+          );
+
+          // Send push notifications
+          await pushNotificationsService.sendBroadcastNotification(
+            '📅 جلسة جديدة!',
+            `${updatedSession.title} • ${new Date(updatedSession.startTime).toLocaleString('ar-EG')}`,
+            {
+              sessionId: updatedSession.id,
+              title: updatedSession.title,
+              startTime: updatedSession.startTime,
+              speaker: updatedSession.speaker,
+              type: 'EVENT_CREATED',
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error creating notifications when publishing session:', error);
+      }
+    }
+
+    return updatedSession;
   }
 
   async regenerateQrToken(sessionId: string) {
