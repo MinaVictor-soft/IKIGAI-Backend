@@ -54,5 +54,5 @@ expertMode = true
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm", "run", "start"]
-build = ["npm", "run", "build"]
+run = ["node", "dist/app.js"]
+build = ["sh", "-c", "npm install --include=dev && npm run build"]
