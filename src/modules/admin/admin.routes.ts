@@ -54,6 +54,10 @@ router.patch('/levels/:levelId', asyncHandler(adminController.updateLevel));
 router.delete('/levels/:levelId', asyncHandler(adminController.deleteLevel));
 router.post('/levels/recalculate', asyncHandler(adminController.recalculateAllLevels));
 
+// System Config (ADMIN + SUPER_ADMIN only)
+router.get('/system-config', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.getSystemConfig));
+router.patch('/system-config/:key', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateSystemConfig));
+
 // Bulk Operations (SUPER_ADMIN only)
 router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));
 
