@@ -1,6 +1,5 @@
-import { PrismaClient, Notification, NotificationType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Notification, NotificationType } from '@prisma/client';
+import prisma from '../../config/database';
 
 export interface CreateNotificationDTO {
   userId: string;
@@ -83,17 +82,16 @@ export class NotificationsService {
   }
 
   async markAsRead(notificationId: string, userId: string): Promise<Notification | null> {
-    return prisma.notification.updateMany({
-      where: {
-        id: notificationId,
-        userId,
-      },
-      data: { read: true },
-    }).then(() => 
-      prisma.notification.findUnique({
-        where: { id: notificationId },
-      })
-    );
+    try {
+      const result = await prisma.notification.updateMany({
+        where: { id: notificationId, userId },
+        data: { read: true },
+      });
+      if (result.count === 0) return null;
+      return prisma.notification.findUnique({ where: { id: notificationId } });
+    } catch {
+      return null;
+    }
   }
 
   async markAllAsRead(userId: string): Promise<{ count: number }> {
