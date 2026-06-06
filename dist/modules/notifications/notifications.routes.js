@@ -40,11 +40,11 @@ const notificationsController = __importStar(require("./notifications.controller
 const router = (0, express_1.Router)();
 // Get recent notifications for authenticated user
 router.get('/recent', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(notificationsController.getRecentNotifications));
+// Mark all notifications as read (must come before /:notificationId route)
+router.patch('/read-all', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(notificationsController.markAllAsRead));
 // Get all notifications for authenticated user with pagination
 router.get('/', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(notificationsController.getNotifications));
 // Mark notification as read
 router.patch('/:notificationId/read', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(notificationsController.markAsRead));
-// Mark all notifications as read
-router.patch('/read-all', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(notificationsController.markAllAsRead));
 exports.default = router;
 //# sourceMappingURL=notifications.routes.js.map
