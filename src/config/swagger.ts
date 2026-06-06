@@ -831,4 +831,102 @@ swaggerSpec.paths = {
       responses: { 201: { description: 'Tribe created' } },
     },
   },
+  // ==================== NOTIFICATIONS ====================
+  '/api/v1/notifications/recent': {
+    get: {
+      tags: ['Notifications'],
+      summary: 'Get recent notifications for authenticated user',
+      parameters: [
+        { name: 'limit', in: 'query', schema: { type: 'integer', example: 50 } },
+        { name: 'since', in: 'query', schema: { type: 'string', format: 'date-time' } },
+      ],
+      responses: {
+        200: {
+          description: 'Recent notifications',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        userId: { type: 'string' },
+                        type: { type: 'string', enum: ['QUIZ_CREATED', 'EVENT_CREATED', 'MATCH_CREATED', 'MATCH_LIVE', 'PUBLICATION_CREATED', 'ACHIEVEMENT_EARNED', 'LEVEL_UP', 'XP_AWARDED', 'ATTENDANCE_REMINDER'] },
+                        title: { type: 'string' },
+                        message: { type: 'string' },
+                        read: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                      },
+                    },
+                  },
+                  unreadCount: { type: 'integer', example: 5 },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  '/api/v1/notifications': {
+    get: {
+      tags: ['Notifications'],
+      summary: 'Get all notifications with pagination',
+      parameters: [
+        { name: 'limit', in: 'query', schema: { type: 'integer', example: 20 } },
+        { name: 'offset', in: 'query', schema: { type: 'integer', example: 0 } },
+        { name: 'unreadOnly', in: 'query', schema: { type: 'boolean', example: false } },
+      ],
+      responses: {
+        200: {
+          description: 'Paginated notifications',
+        },
+      },
+    },
+  },
+  '/api/v1/notifications/{notificationId}/read': {
+    patch: {
+      tags: ['Notifications'],
+      summary: 'Mark notification as read',
+      parameters: [
+        { name: 'notificationId', in: 'path', required: true, schema: { type: 'string' } },
+      ],
+      responses: {
+        200: { description: 'Notification marked as read' },
+        404: { description: 'Notification not found' },
+      },
+    },
+  },
+  '/api/v1/notifications/read-all': {
+    patch: {
+      tags: ['Notifications'],
+      summary: 'Mark all notifications as read',
+      responses: {
+        200: {
+          description: 'All notifications marked as read',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      count: { type: 'integer', example: 15 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 };
