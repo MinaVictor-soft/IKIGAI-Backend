@@ -1,6 +1,9 @@
 import { CreatePublicationInput, UpdatePublicationInput, CreateCategoryInput, UpdateCategoryInput } from './publications.schema';
 declare class PublicationsService {
     create(input: CreatePublicationInput, createdBy: string): Promise<{
+        creator: {
+            name: string;
+        };
         category: {
             name: string;
             id: string;
@@ -25,6 +28,9 @@ declare class PublicationsService {
         publishedAt: Date | null;
     }>;
     update(id: string, input: UpdatePublicationInput): Promise<{
+        creator: {
+            name: string;
+        };
         category: {
             name: string;
             id: string;

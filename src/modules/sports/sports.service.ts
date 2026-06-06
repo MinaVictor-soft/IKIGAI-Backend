@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { xpService } from '../xp/xp.service';
 import { notificationsService } from '../notifications/notifications.service';
+import { pushNotificationsService } from '../push-notifications/push-notifications.service';
 import { CreateTeamInput, AddPlayerInput, CreateMatchInput, UpdateScoreInput, AddEventInput } from './sports.schema';
 
 export class SportsService {
@@ -142,6 +143,19 @@ export class SportsService {
             homeTeam: match.homeTeam.name,
             awayTeam: match.awayTeam.name,
             scheduledAt: match.scheduledAt,
+          }
+        );
+
+        // Send push notifications
+        await pushNotificationsService.sendBroadcastNotification(
+          '⚽ مباراة جديدة!',
+          `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+          {
+            matchId: match.id,
+            homeTeam: match.homeTeam.name,
+            awayTeam: match.awayTeam.name,
+            scheduledAt: match.scheduledAt,
+            type: 'MATCH_CREATED',
           }
         );
       }

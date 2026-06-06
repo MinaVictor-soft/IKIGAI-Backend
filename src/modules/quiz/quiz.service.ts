@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { xpService } from '../xp/xp.service';
 import { notificationsService } from '../notifications/notifications.service';
+import { pushNotificationsService } from '../push-notifications/push-notifications.service';
 import { CreateQuizInput, CreateQuestionInput, SubmitQuizInput } from './quiz.schema';
 
 export class QuizService {
@@ -26,6 +27,18 @@ export class QuizService {
             quizId: quiz.id,
             title: quiz.title,
             xpReward: quiz.xpReward,
+          }
+        );
+
+        // Send push notifications
+        await pushNotificationsService.sendBroadcastNotification(
+          '🎯 مسابقة جديدة!',
+          `${quiz.title} • ${quiz.xpReward} XP`,
+          {
+            quizId: quiz.id,
+            title: quiz.title,
+            xpReward: quiz.xpReward,
+            type: 'QUIZ_CREATED',
           }
         );
       }

@@ -41,7 +41,7 @@ export async function getNotifications(req: Request, res: Response) {
 
 export async function markAsRead(req: Request, res: Response) {
   const userId = (req.user as any).userId;
-  const { notificationId } = req.params;
+  const notificationId = req.params.notificationId as string;
 
   const notification = await notificationsService.markAsRead(notificationId, userId);
 

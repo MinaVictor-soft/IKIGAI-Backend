@@ -7,6 +7,8 @@ exports.sportsService = exports.SportsService = void 0;
 const database_1 = __importDefault(require("../../config/database"));
 const errorHandler_1 = require("../../middleware/errorHandler");
 const xp_service_1 = require("../xp/xp.service");
+const notifications_service_1 = require("../notifications/notifications.service");
+const push_notifications_service_1 = require("../push-notifications/push-notifications.service");
 class SportsService {
     // ============ TEAMS ============
     async createTeam(input) {
@@ -96,7 +98,7 @@ class SportsService {
         if (input.homeTeamId === input.awayTeamId) {
             throw new errorHandler_1.AppError(400, 'SAME_TEAM', 'A team cannot play against itself');
         }
-        return database_1.default.match.create({
+        const match = await database_1.default.match.create({
             data: {
                 homeTeamId: input.homeTeamId,
                 awayTeamId: input.awayTeamId,
@@ -108,7 +110,39 @@ class SportsService {
                 drawXp: input.drawXp,
                 lossXp: input.lossXp,
             },
+            include: {
+                homeTeam: { select: { name: true } },
+                awayTeam: { select: { name: true } },
+            },
         });
+        // Create notifications for all users about new match
+        try {
+            const users = await database_1.default.user.findMany({
+                where: { status: 'ACTIVE' },
+                select: { id: true },
+            });
+            const userIds = users.map(u => u.id);
+            if (userIds.length > 0) {
+                await notifications_service_1.notificationsService.createBulkNotifications(userIds, 'MATCH_CREATED', '⚽ مباراة جديدة!', `${match.homeTeam.name} vs ${match.awayTeam.name}`, {
+                    matchId: match.id,
+                    homeTeam: match.homeTeam.name,
+                    awayTeam: match.awayTeam.name,
+                    scheduledAt: match.scheduledAt,
+                });
+                // Send push notifications
+                await push_notifications_service_1.pushNotificationsService.sendBroadcastNotification('⚽ مباراة جديدة!', `${match.homeTeam.name} vs ${match.awayTeam.name}`, {
+                    matchId: match.id,
+                    homeTeam: match.homeTeam.name,
+                    awayTeam: match.awayTeam.name,
+                    scheduledAt: match.scheduledAt,
+                    type: 'MATCH_CREATED',
+                });
+            }
+        }
+        catch (error) {
+            console.error('Error creating notifications for match:', error);
+        }
+        return match;
     }
     async getMatches(status) {
         return database_1.default.match.findMany({

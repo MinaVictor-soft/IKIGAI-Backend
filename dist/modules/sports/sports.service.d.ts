@@ -112,6 +112,13 @@ export declare class SportsService {
         joinedAt: Date;
     }>;
     createMatch(input: CreateMatchInput): Promise<{
+        homeTeam: {
+            name: string;
+        };
+        awayTeam: {
+            name: string;
+        };
+    } & {
         status: import(".prisma/client").$Enums.MatchStatus;
         homeTeamId: string;
         awayTeamId: string;

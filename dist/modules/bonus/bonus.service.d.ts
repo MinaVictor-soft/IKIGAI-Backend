@@ -7,10 +7,10 @@ export declare class BonusService {
         createdAt: Date;
         updatedAt: Date;
         expiresAt: Date | null;
+        isActive: boolean;
         label: string | null;
         maxClaims: number | null;
         claimsCount: number;
-        isActive: boolean;
         batchId: string | null;
         createdBy: string;
     }>;
@@ -52,10 +52,10 @@ export declare class BonusService {
         createdAt: Date;
         updatedAt: Date;
         expiresAt: Date | null;
+        isActive: boolean;
         label: string | null;
         maxClaims: number | null;
         claimsCount: number;
-        isActive: boolean;
         batchId: string | null;
         createdBy: string;
     })[]>;
@@ -66,10 +66,10 @@ export declare class BonusService {
         createdAt: Date;
         updatedAt: Date;
         expiresAt: Date | null;
+        isActive: boolean;
         label: string | null;
         maxClaims: number | null;
         claimsCount: number;
-        isActive: boolean;
         batchId: string | null;
         createdBy: string;
     }>;

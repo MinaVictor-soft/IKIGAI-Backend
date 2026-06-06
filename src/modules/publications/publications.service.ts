@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { notificationsService } from '../notifications/notifications.service';
+import { pushNotificationsService } from '../push-notifications/push-notifications.service';
 import { CreatePublicationInput, UpdatePublicationInput, CreateCategoryInput, UpdateCategoryInput } from './publications.schema';
 
 class PublicationsService {
@@ -33,6 +34,18 @@ class PublicationsService {
               publicationId: publication.id,
               title: publication.title,
               author: publication.creator.name,
+            }
+          );
+
+          // Send push notifications
+          await pushNotificationsService.sendBroadcastNotification(
+            '📰 منشور جديد!',
+            `${publication.title} بقلم ${publication.creator.name}`,
+            {
+              publicationId: publication.id,
+              title: publication.title,
+              author: publication.creator.name,
+              type: 'PUBLICATION_CREATED',
             }
           );
         }
