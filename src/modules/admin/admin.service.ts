@@ -573,6 +573,21 @@ export class AdminService {
 
     return { updated };
   }
+
+  async getSystemConfig() {
+    const configs = await prisma.systemConfig.findMany({ orderBy: { category: 'asc' } });
+    return configs.reduce((acc: Record<string, any>, c) => {
+      acc[c.key] = { value: c.value, description: c.description, category: c.category };
+      return acc;
+    }, {});
+  }
+
+  async updateSystemConfig(key: string, value: any, updatedBy: string) {
+    return prisma.systemConfig.update({
+      where: { key },
+      data: { value, updatedBy },
+    });
+  }
 }
 
 export const adminService = new AdminService();
