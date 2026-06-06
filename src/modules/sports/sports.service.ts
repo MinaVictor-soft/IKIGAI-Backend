@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { xpService } from '../xp/xp.service';
+import { notificationsService } from '../notifications/notifications.service';
 import { CreateTeamInput, AddPlayerInput, CreateMatchInput, UpdateScoreInput, AddEventInput } from './sports.schema';
 
 export class SportsService {
@@ -104,7 +105,7 @@ export class SportsService {
       throw new AppError(400, 'SAME_TEAM', 'A team cannot play against itself');
     }
 
-    return prisma.match.create({
+    const match = await prisma.match.create({
       data: {
         homeTeamId: input.homeTeamId,
         awayTeamId: input.awayTeamId,
@@ -116,7 +117,39 @@ export class SportsService {
         drawXp: input.drawXp,
         lossXp: input.lossXp,
       },
+      include: {
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+      },
     });
+
+    // Create notifications for all users about new match
+    try {
+      const users = await prisma.user.findMany({
+        where: { status: 'ACTIVE' },
+        select: { id: true },
+      });
+
+      const userIds = users.map(u => u.id);
+      if (userIds.length > 0) {
+        await notificationsService.createBulkNotifications(
+          userIds,
+          'MATCH_CREATED',
+          '⚽ مباراة جديدة!',
+          `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+          {
+            matchId: match.id,
+            homeTeam: match.homeTeam.name,
+            awayTeam: match.awayTeam.name,
+            scheduledAt: match.scheduledAt,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error creating notifications for match:', error);
+    }
+
+    return match;
   }
 
   async getMatches(status?: string) {

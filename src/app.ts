@@ -17,6 +17,7 @@ import bonusRoutes from './modules/bonus/bonus.routes';
 import sportsRoutes from './modules/sports/sports.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import publicationsRoutes from './modules/publications/publications.routes';
+import notificationsRoutes from './modules/notifications/notifications.routes';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/api/v1/bonus', bonusRoutes);
 app.use('/api/v1/sports', sportsRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/publications', publicationsRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
 
 // Error handling
 app.use(notFoundHandler);

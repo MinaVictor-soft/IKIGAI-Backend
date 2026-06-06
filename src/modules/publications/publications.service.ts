@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { notificationsService } from '../notifications/notifications.service';
 import { CreatePublicationInput, UpdatePublicationInput, CreateCategoryInput, UpdateCategoryInput } from './publications.schema';
 
 class PublicationsService {
@@ -10,23 +11,89 @@ class PublicationsService {
         publishedAt: input.published ? new Date() : null,
         createdBy,
       },
-      include: { category: true },
+      include: { category: true, creator: { select: { name: true } } },
     });
+
+    // Create notifications if published
+    if (publication.published) {
+      try {
+        const users = await prisma.user.findMany({
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        });
+
+        const userIds = users.map(u => u.id);
+        if (userIds.length > 0) {
+          await notificationsService.createBulkNotifications(
+            userIds,
+            'PUBLICATION_CREATED',
+            '📰 منشور جديد!',
+            `${publication.title} بقلم ${publication.creator.name}`,
+            {
+              publicationId: publication.id,
+              title: publication.title,
+              author: publication.creator.name,
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error creating notifications for publication:', error);
+      }
+    }
+
     return publication;
   }
 
   async update(id: string, input: UpdatePublicationInput) {
-    const existing = await prisma.publication.findUnique({ where: { id } });
+    const existing = await prisma.publication.findUnique({ 
+      where: { id },
+      include: { creator: { select: { name: true } } }
+    });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Publication not found');
 
     const data: any = { ...input };
+    let shouldNotify = false;
 
     // Set publishedAt when publishing for the first time
     if (input.published === true && !existing.publishedAt) {
       data.publishedAt = new Date();
+      shouldNotify = true;
     }
 
-    return prisma.publication.update({ where: { id }, data, include: { category: true } });
+    const updated = await prisma.publication.update({ 
+      where: { id }, 
+      data, 
+      include: { category: true, creator: { select: { name: true } } } 
+    });
+
+    // Create notifications if just published
+    if (shouldNotify) {
+      try {
+        const users = await prisma.user.findMany({
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        });
+
+        const userIds = users.map(u => u.id);
+        if (userIds.length > 0) {
+          await notificationsService.createBulkNotifications(
+            userIds,
+            'PUBLICATION_CREATED',
+            '📰 منشور جديد!',
+            `${updated.title} بقلم ${updated.creator.name}`,
+            {
+              publicationId: updated.id,
+              title: updated.title,
+              author: updated.creator.name,
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error creating notifications for publication:', error);
+      }
+    }
+
+    return updated;
   }
 
   async delete(id: string) {

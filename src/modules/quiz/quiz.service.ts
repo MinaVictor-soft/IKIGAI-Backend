@@ -1,11 +1,40 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { xpService } from '../xp/xp.service';
+import { notificationsService } from '../notifications/notifications.service';
 import { CreateQuizInput, CreateQuestionInput, SubmitQuizInput } from './quiz.schema';
 
 export class QuizService {
   async createQuiz(input: CreateQuizInput) {
-    return prisma.quiz.create({ data: input });
+    const quiz = await prisma.quiz.create({ data: input });
+
+    // Create notifications for all active users
+    try {
+      const users = await prisma.user.findMany({
+        where: { status: 'ACTIVE' },
+        select: { id: true },
+      });
+
+      const userIds = users.map(u => u.id);
+      if (userIds.length > 0) {
+        await notificationsService.createBulkNotifications(
+          userIds,
+          'QUIZ_CREATED',
+          '🎯 مسابقة جديدة!',
+          `${quiz.title} • ${quiz.xpReward} XP`,
+          {
+            quizId: quiz.id,
+            title: quiz.title,
+            xpReward: quiz.xpReward,
+          }
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail quiz creation
+      console.error('Error creating notifications for quiz:', error);
+    }
+
+    return quiz;
   }
 
   async addQuestion(quizId: string, input: CreateQuestionInput) {
@@ -102,7 +131,8 @@ export class QuizService {
     }
 
     const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
-    const passed = quiz.passingScore ? percentage >= quiz.passingScore : true;
+    const passingScore = quiz.passingScore ?? 70; // Default to 70% if not specified
+    const passed = percentage >= passingScore;
     const xpAwarded = passed ? quiz.xpReward : 0;
 
     // Calculate time taken
