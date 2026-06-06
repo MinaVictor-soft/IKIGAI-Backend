@@ -529,5 +529,16 @@ export declare class AdminService {
     recalculateAllLevels(): Promise<{
         updated: number;
     }>;
+    getSystemConfig(): Promise<Record<string, any>>;
+    updateSystemConfig(key: string, value: any, updatedBy: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        value: import("@prisma/client/runtime/client").JsonValue;
+        key: string;
+        category: string;
+        updatedBy: string | null;
+    }>;
 }
 export declare const adminService: AdminService;

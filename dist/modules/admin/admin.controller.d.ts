@@ -29,5 +29,7 @@ export declare class AdminController {
     updateLevel(req: Request, res: Response): Promise<void>;
     deleteLevel(req: Request, res: Response): Promise<void>;
     recalculateAllLevels(req: Request, res: Response): Promise<void>;
+    getSystemConfig(req: Request, res: Response): Promise<void>;
+    updateSystemConfig(req: Request, res: Response): Promise<void>;
 }
 export declare const adminController: AdminController;

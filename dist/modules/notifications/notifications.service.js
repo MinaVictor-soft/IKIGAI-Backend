@@ -1,11 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.notificationsService = exports.NotificationsService = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const database_1 = __importDefault(require("../../config/database"));
 class NotificationsService {
     async createNotification(dto) {
-        return prisma.notification.create({
+        return database_1.default.notification.create({
             data: {
                 userId: dto.userId,
                 type: dto.type,
@@ -26,7 +28,7 @@ class NotificationsService {
         if (since) {
             where.createdAt = { gte: since };
         }
-        return prisma.notification.findMany({
+        return database_1.default.notification.findMany({
             where,
             orderBy: { createdAt: 'desc' },
             take: limit,
@@ -38,29 +40,32 @@ class NotificationsService {
             where.read = false;
         }
         const [notifications, total] = await Promise.all([
-            prisma.notification.findMany({
+            database_1.default.notification.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: limit,
                 skip: offset,
             }),
-            prisma.notification.count({ where }),
+            database_1.default.notification.count({ where }),
         ]);
         return { notifications, total };
     }
     async markAsRead(notificationId, userId) {
-        return prisma.notification.updateMany({
-            where: {
-                id: notificationId,
-                userId,
-            },
-            data: { read: true },
-        }).then(() => prisma.notification.findUnique({
-            where: { id: notificationId },
-        }));
+        try {
+            const result = await database_1.default.notification.updateMany({
+                where: { id: notificationId, userId },
+                data: { read: true },
+            });
+            if (result.count === 0)
+                return null;
+            return database_1.default.notification.findUnique({ where: { id: notificationId } });
+        }
+        catch {
+            return null;
+        }
     }
     async markAllAsRead(userId) {
-        const result = await prisma.notification.updateMany({
+        const result = await database_1.default.notification.updateMany({
             where: {
                 userId,
                 read: false,
@@ -70,7 +75,7 @@ class NotificationsService {
         return { count: result.count };
     }
     async getUnreadCount(userId) {
-        return prisma.notification.count({
+        return database_1.default.notification.count({
             where: {
                 userId,
                 read: false,
@@ -80,7 +85,7 @@ class NotificationsService {
     async deleteOldNotifications(daysOld = 30) {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-        const result = await prisma.notification.deleteMany({
+        const result = await database_1.default.notification.deleteMany({
             where: {
                 read: true,
                 createdAt: { lt: cutoffDate },

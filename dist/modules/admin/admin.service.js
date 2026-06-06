@@ -516,6 +516,19 @@ class AdminService {
         }
         return { updated };
     }
+    async getSystemConfig() {
+        const configs = await database_1.default.systemConfig.findMany({ orderBy: { category: 'asc' } });
+        return configs.reduce((acc, c) => {
+            acc[c.key] = { value: c.value, description: c.description, category: c.category };
+            return acc;
+        }, {});
+    }
+    async updateSystemConfig(key, value, updatedBy) {
+        return database_1.default.systemConfig.update({
+            where: { key },
+            data: { value, updatedBy },
+        });
+    }
 }
 exports.AdminService = AdminService;
 exports.adminService = new AdminService();
