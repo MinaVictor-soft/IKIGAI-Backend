@@ -43,7 +43,7 @@ export async function markAsRead(req: Request, res: Response) {
   const userId = (req.user as any).userId;
   const notificationId = req.params.notificationId as string;
 
-  const notification = await notificationsService.markAsRead(notificationId, userId);
+  const notification = await notificationsService.markAsRead(notificationId as string, userId);
 
   if (!notification) {
     return res.status(404).json({
