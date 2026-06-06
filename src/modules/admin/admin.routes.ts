@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { adminController } from './admin.controller';
 import { validate } from '../../middleware/validate';
 import { authenticate, authorize } from '../../middleware/auth';
-import { createSessionSchema, updateSessionSchema, updateSessionStatusSchema, createUserSchema, createTribeSchema, updateTribeSchema, assignTribeSchema, adjustXpSchema, resetPasswordSchema, changeUserRoleSchema } from './admin.schema';
+import { createSessionSchema, updateSessionSchema, updateSessionStatusSchema, createUserSchema, createTribeSchema, updateTribeSchema, assignTribeSchema, adjustXpSchema, resetPasswordSchema, changeUserRoleSchema, updateCmsConfigSchema, updateNavConfigSchema } from './admin.schema';
 import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
@@ -57,6 +57,14 @@ router.post('/levels/recalculate', asyncHandler(adminController.recalculateAllLe
 // System Config (ADMIN + SUPER_ADMIN only)
 router.get('/system-config', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.getSystemConfig));
 router.patch('/system-config/:key', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateSystemConfig));
+
+// CMS Config (SUPER_ADMIN only, bulk update)
+router.get('/config', authorize('SUPER_ADMIN'), asyncHandler(adminController.getCmsConfig));
+router.patch('/config', validate(updateCmsConfigSchema), authorize('SUPER_ADMIN'), asyncHandler(adminController.updateCmsConfig));
+
+// Navigation Config (SUPER_ADMIN only)
+router.get('/nav-config', authorize('SUPER_ADMIN'), asyncHandler(adminController.getNavConfig));
+router.patch('/nav-config', validate(updateNavConfigSchema), authorize('SUPER_ADMIN'), asyncHandler(adminController.updateNavConfig));
 
 // Bulk Operations (SUPER_ADMIN only)
 router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));

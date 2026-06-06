@@ -33,6 +33,7 @@ export const createUserSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8).max(100),
   name: z.string().min(2).max(100),
+  phone: z.string().max(20).optional(),
   role: z.enum(['ATTENDEE', 'STAFF', 'ADMIN', 'SUPER_ADMIN']).default('ATTENDEE'),
   church: z.string().max(200).optional(),
   diocese: z.string().max(200).optional(),
@@ -70,7 +71,29 @@ export const changeUserRoleSchema = z.object({
   role: z.enum(['ATTENDEE', 'STAFF', 'ADMIN', 'SUPER_ADMIN']),
 });
 
+export const updateCmsConfigSchema = z.object({
+  appName: z.string().max(200).optional(),
+  appNameAr: z.string().max(200).optional(),
+  infoPageTitle: z.string().max(200).optional(),
+  infoPageTitleAr: z.string().max(200).optional(),
+  infoPageContent: z.string().optional(),
+  infoPageContentAr: z.string().optional(),
+});
+
+export const updateNavConfigSchema = z.object({
+  web: z.array(z.object({
+    name: z.string(),
+    visible: z.boolean(),
+  })).optional(),
+  mobile: z.array(z.object({
+    name: z.string(),
+    visible: z.boolean(),
+  })).optional(),
+});
+
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type CreateTribeInput = z.infer<typeof createTribeSchema>;
 export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;
+export type UpdateCmsConfigInput = z.infer<typeof updateCmsConfigSchema>;
+export type UpdateNavConfigInput = z.infer<typeof updateNavConfigSchema>;
