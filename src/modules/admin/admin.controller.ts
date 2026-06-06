@@ -157,6 +157,20 @@ export class AdminController {
     const result = await adminService.recalculateAllLevels();
     sendSuccess(res, result);
   }
+
+  // System Config
+  async getSystemConfig(req: Request, res: Response) {
+    const config = await adminService.getSystemConfig();
+    sendSuccess(res, config);
+  }
+
+  async updateSystemConfig(req: Request, res: Response) {
+    const key = req.params.key as string;
+    const { value } = req.body;
+    const userId = (req.user as any).userId;
+    const config = await adminService.updateSystemConfig(key, value, userId);
+    sendSuccess(res, config);
+  }
 }
 
 export const adminController = new AdminController();
