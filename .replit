@@ -1,6 +1,6 @@
 entrypoint = "src/app.ts"
 run = "npm run dev"
-modules = ["nodejs-20"]
+modules = ["nodejs-20", "postgresql-16"]
 
 [nix]
 channel = "unstable"
