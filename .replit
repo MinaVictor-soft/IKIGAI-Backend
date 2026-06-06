@@ -23,6 +23,7 @@ externalPort = 80
 [userenv.shared]
 NODE_ENV = "development"
 JWT_SECRET = "ikigai-quest-secret-key-change-in-production"
+JWT_REFRESH_SECRET = "ikigai-quest-refresh-secret-key-change-in-production"
 
 [workflows]
 runButton = "Project"
@@ -53,5 +54,5 @@ expertMode = true
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "dist/app.js"]
+run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
