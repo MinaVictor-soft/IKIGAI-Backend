@@ -142,7 +142,6 @@ export class AdminService {
         email: input.email,
         passwordHash,
         name: input.name,
-        phone: input.phone,
         role: input.role as any,
         church: input.church,
         diocese: input.diocese,
@@ -152,7 +151,6 @@ export class AdminService {
         id: true,
         email: true,
         name: true,
-        phone: true,
         role: true,
         church: true,
         diocese: true,
@@ -633,77 +631,6 @@ export class AdminService {
     return prisma.systemConfig.update({
       where: { key },
       data: { value, updatedBy },
-    });
-  }
-
-  // CMS Config - bulk update for app name and info page
-  async getCmsConfig() {
-    const keys = ['appName', 'appNameAr', 'infoPageTitle', 'infoPageTitleAr', 'infoPageContent', 'infoPageContentAr'];
-    const configs = await prisma.systemConfig.findMany({
-      where: { key: { in: keys } },
-    });
-
-    const result: Record<string, any> = {};
-    keys.forEach(key => {
-      const config = configs.find(c => c.key === key);
-      result[key] = config?.value || '';
-    });
-    return result;
-  }
-
-  async updateCmsConfig(data: Record<string, any>, updatedBy: string) {
-    const updates = Object.entries(data).map(([key, value]) => {
-      return prisma.systemConfig.upsert({
-        where: { key },
-        update: { value, updatedBy },
-        create: { key, value, category: 'CMS', updatedBy },
-      });
-    });
-
-    await Promise.all(updates);
-    return this.getCmsConfig();
-  }
-
-  // Nav Config - manage visibility of navigation items per platform
-  async getNavConfig() {
-    const config = await prisma.systemConfig.findUnique({
-      where: { key: 'navConfig' },
-    });
-
-    // Default nav items if not configured
-    const defaultConfig = {
-      web: [
-        { name: 'home', visible: true },
-        { name: 'profile', visible: true },
-        { name: 'leaderboard', visible: true },
-        { name: 'events', visible: true },
-        { name: 'quizzes', visible: true },
-        { name: 'library', visible: true },
-        { name: 'sports', visible: true },
-        { name: 'scan', visible: true },
-        { name: 'info', visible: true },
-      ],
-      mobile: [
-        { name: 'home', visible: true },
-        { name: 'profile', visible: true },
-        { name: 'leaderboard', visible: true },
-        { name: 'events', visible: true },
-        { name: 'quizzes', visible: true },
-        { name: 'library', visible: true },
-        { name: 'sports', visible: true },
-        { name: 'scan', visible: true },
-        { name: 'info', visible: true },
-      ],
-    };
-
-    return config?.value || defaultConfig;
-  }
-
-  async updateNavConfig(data: Record<string, any>, updatedBy: string) {
-    return prisma.systemConfig.upsert({
-      where: { key: 'navConfig' },
-      update: { value: data, updatedBy },
-      create: { key: 'navConfig', value: data, category: 'NAV', updatedBy },
     });
   }
 }

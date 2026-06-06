@@ -171,30 +171,6 @@ export class AdminController {
     const config = await adminService.updateSystemConfig(key, value, userId);
     sendSuccess(res, config);
   }
-
-  // CMS Config (bulk update)
-  async getCmsConfig(req: Request, res: Response) {
-    const config = await adminService.getCmsConfig();
-    sendSuccess(res, config);
-  }
-
-  async updateCmsConfig(req: Request, res: Response) {
-    const userId = (req.user as any).userId;
-    const config = await adminService.updateCmsConfig(req.body, userId);
-    sendSuccess(res, config);
-  }
-
-  // Nav Config
-  async getNavConfig(req: Request, res: Response) {
-    const config = await adminService.getNavConfig();
-    sendSuccess(res, config);
-  }
-
-  async updateNavConfig(req: Request, res: Response) {
-    const userId = (req.user as any).userId;
-    const config = await adminService.updateNavConfig(req.body, userId);
-    sendSuccess(res, config);
-  }
 }
 
 export const adminController = new AdminController();
