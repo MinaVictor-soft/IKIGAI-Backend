@@ -1,0 +1,33 @@
+import { Request, Response } from 'express';
+export declare class AdminController {
+    createSession(req: Request, res: Response): Promise<void>;
+    getSessions(req: Request, res: Response): Promise<void>;
+    updateSession(req: Request, res: Response): Promise<void>;
+    updateSessionStatus(req: Request, res: Response): Promise<void>;
+    regenerateQr(req: Request, res: Response): Promise<void>;
+    createUser(req: Request, res: Response): Promise<void>;
+    getUsers(req: Request, res: Response): Promise<void>;
+    assignTribe(req: Request, res: Response): Promise<void>;
+    changeUserRole(req: Request, res: Response): Promise<void>;
+    resetUserPassword(req: Request, res: Response): Promise<void>;
+    deleteUser(req: Request, res: Response): Promise<void>;
+    createTribe(req: Request, res: Response): Promise<void>;
+    getTribes(req: Request, res: Response): Promise<void>;
+    updateTribe(req: Request, res: Response): Promise<void>;
+    stats(req: Request, res: Response): Promise<void>;
+    deleteAllAttendees(req: Request, res: Response): Promise<void>;
+    adjustXp(req: Request, res: Response): Promise<void>;
+    getUserDetail(req: Request, res: Response): Promise<void>;
+    getUserActivity(req: Request, res: Response): Promise<void>;
+    getBonusQrClaims(req: Request, res: Response): Promise<void>;
+    getAllQuizzes(req: Request, res: Response): Promise<void>;
+    getQuizDetail(req: Request, res: Response): Promise<void>;
+    deleteQuizQuestion(req: Request, res: Response): Promise<void>;
+    getSessionDetail(req: Request, res: Response): Promise<void>;
+    getLevels(req: Request, res: Response): Promise<void>;
+    createLevel(req: Request, res: Response): Promise<void>;
+    updateLevel(req: Request, res: Response): Promise<void>;
+    deleteLevel(req: Request, res: Response): Promise<void>;
+    recalculateAllLevels(req: Request, res: Response): Promise<void>;
+}
+export declare const adminController: AdminController;

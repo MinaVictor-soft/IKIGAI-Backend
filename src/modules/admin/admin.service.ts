@@ -492,7 +492,7 @@ export class AdminService {
 
   // ============ SESSION STATS ============
   async getSessionDetail(sessionId: string) {
-    const session = await prisma.session.findUnique({
+    const session = await prisma.conferenceSession.findUnique({
       where: { id: sessionId },
       include: { _count: { select: { attendance: true } } },
     });

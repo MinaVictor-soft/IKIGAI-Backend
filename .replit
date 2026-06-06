@@ -8,7 +8,7 @@ channel = "unstable"
 [env]
 NODE_ENV = "production"
 PORT = "3000"
-DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/ikigai_quest"
+DATABASE_URL = "postgresql://postgres:password@helium:5432/heliumdb"
 JWT_SECRET = "ikigai-quest-secret-key-change-this"
 
 [packager]
@@ -50,3 +50,8 @@ waitForPort = 3000
 
 [agent]
 expertMode = true
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "dist/app.js"]
+build = ["npm", "run", "build"]
