@@ -23,6 +23,7 @@ const admin_routes_1 = __importDefault(require("./modules/admin/admin.routes"));
 const publications_routes_1 = __importDefault(require("./modules/publications/publications.routes"));
 const notifications_routes_1 = __importDefault(require("./modules/notifications/notifications.routes"));
 const push_notifications_routes_1 = __importDefault(require("./modules/push-notifications/push-notifications.routes"));
+const tournament_routes_1 = __importDefault(require("./modules/tournament/tournament.routes"));
 const app = (0, express_1.default)();
 // Global middleware
 app.use((0, compression_1.default)());
@@ -54,6 +55,7 @@ app.use('/api/v1/admin', admin_routes_1.default);
 app.use('/api/v1/publications', publications_routes_1.default);
 app.use('/api/v1/notifications', notifications_routes_1.default);
 app.use('/api/v1/push-notifications', push_notifications_routes_1.default);
+app.use('/api/v1/tournaments', tournament_routes_1.default);
 // Error handling
 app.use(errorHandler_1.notFoundHandler);
 app.use(errorHandler_1.errorHandler);

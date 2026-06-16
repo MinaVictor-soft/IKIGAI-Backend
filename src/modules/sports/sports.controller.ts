@@ -9,6 +9,16 @@ export class SportsController {
     sendCreated(res, team);
   }
 
+  async updateTeam(req: Request, res: Response) {
+    const team = await sportsService.updateTeam(getParam(req, 'teamId'), req.body);
+    sendSuccess(res, team);
+  }
+
+  async deleteTeam(req: Request, res: Response) {
+    await sportsService.deleteTeam(getParam(req, 'teamId'));
+    sendSuccess(res, { message: 'Team deleted' });
+  }
+
   async getTeams(req: Request, res: Response) {
     const teams = await sportsService.getTeams();
     sendSuccess(res, teams);
@@ -67,6 +77,26 @@ export class SportsController {
   async getMyTeam(req: Request, res: Response) {
     const team = await sportsService.getMyTeam(req.user!.userId);
     sendSuccess(res, team);
+  }
+
+  async resetAllData(req: Request, res: Response) {
+    const result = await sportsService.resetAllData();
+    sendSuccess(res, result);
+  }
+
+  async deleteAllTeams(req: Request, res: Response) {
+    const result = await sportsService.deleteAllTeams();
+    sendSuccess(res, result);
+  }
+
+  async deleteAllMatches(req: Request, res: Response) {
+    const result = await sportsService.deleteAllMatches();
+    sendSuccess(res, result);
+  }
+
+  async deleteAllTournaments(req: Request, res: Response) {
+    const result = await sportsService.deleteAllTournaments();
+    sendSuccess(res, result);
   }
 }
 

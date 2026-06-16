@@ -7,6 +7,8 @@ const auth_1 = require("../../middleware/auth");
 const admin_schema_1 = require("./admin.schema");
 const asyncHandler_1 = require("../../utils/asyncHandler");
 const router = (0, express_1.Router)();
+// Public settings - anyone can read (no auth required)
+router.get('/settings', (0, asyncHandler_1.asyncHandler)(admin_controller_1.adminController.getAdminSettings));
 // All admin routes require STAFF, ADMIN or SUPER_ADMIN
 router.use(auth_1.authenticate, (0, auth_1.authorize)('STAFF', 'ADMIN', 'SUPER_ADMIN'));
 // Dashboard
@@ -48,6 +50,8 @@ router.post('/levels/recalculate', (0, asyncHandler_1.asyncHandler)(admin_contro
 // System Config (ADMIN + SUPER_ADMIN only)
 router.get('/system-config', (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(admin_controller_1.adminController.getSystemConfig));
 router.patch('/system-config/:key', (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(admin_controller_1.adminController.updateSystemConfig));
+// Admin Settings - PATCH only (requires ADMIN)
+router.patch('/settings', (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(admin_controller_1.adminController.updateAdminSettings));
 // Bulk Operations (SUPER_ADMIN only)
 router.delete('/users/attendees', (0, auth_1.authorize)('SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(admin_controller_1.adminController.deleteAllAttendees));
 exports.default = router;

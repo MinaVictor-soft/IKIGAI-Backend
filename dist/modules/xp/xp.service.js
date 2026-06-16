@@ -119,6 +119,8 @@ class XpService {
                 name: true,
                 avatarUrl: true,
                 totalXp: true,
+                church: true,
+                diocese: true,
                 tribe: { select: { id: true, name: true, color: true } },
                 level: { select: { name: true, badgeUrl: true } },
             },

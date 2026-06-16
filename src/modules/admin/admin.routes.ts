@@ -7,6 +7,9 @@ import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
 
+// Public settings - anyone can read (no auth required)
+router.get('/settings', asyncHandler(adminController.getAdminSettings));
+
 // All admin routes require STAFF, ADMIN or SUPER_ADMIN
 router.use(authenticate, authorize('STAFF', 'ADMIN', 'SUPER_ADMIN'));
 
@@ -57,6 +60,9 @@ router.post('/levels/recalculate', asyncHandler(adminController.recalculateAllLe
 // System Config (ADMIN + SUPER_ADMIN only)
 router.get('/system-config', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.getSystemConfig));
 router.patch('/system-config/:key', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateSystemConfig));
+
+// Admin Settings - PATCH only (requires ADMIN)
+router.patch('/settings', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateAdminSettings));
 
 // Bulk Operations (SUPER_ADMIN only)
 router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));

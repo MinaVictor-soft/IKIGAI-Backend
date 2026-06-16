@@ -12,6 +12,20 @@ export class SportsService {
     return prisma.sportsTeam.create({ data: input });
   }
 
+  async updateTeam(teamId: string, data: { name?: string; color?: string }) {
+    const team = await prisma.sportsTeam.findUnique({ where: { id: teamId } });
+    if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found');
+    return prisma.sportsTeam.update({ where: { id: teamId }, data });
+  }
+
+  async deleteTeam(teamId: string) {
+    const team = await prisma.sportsTeam.findUnique({ where: { id: teamId } });
+    if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found');
+    // Delete players first due to foreign key constraint
+    await prisma.teamPlayer.deleteMany({ where: { teamId } });
+    return prisma.sportsTeam.delete({ where: { id: teamId } });
+  }
+
   async getTeams() {
     return prisma.sportsTeam.findMany({
       include: { _count: { select: { players: true } }, players: { select: { userId: true } } },
@@ -332,6 +346,39 @@ export class SportsService {
       orderBy: { _count: { id: 'desc' } },
       take: limit,
     });
+  }
+
+  async resetAllData() {
+    // Delete in order to respect foreign key constraints
+    await prisma.matchEvent.deleteMany({});
+    await prisma.match.deleteMany({});
+    await prisma.tournamentMatch.deleteMany({});
+    await prisma.tournament.deleteMany({});
+    await prisma.teamPlayer.deleteMany({});
+    await prisma.sportsTeam.deleteMany({});
+    return { message: 'All sports data cleared' };
+  }
+
+  async deleteAllTeams() {
+    // Delete team players first, then teams
+    await prisma.teamPlayer.deleteMany({});
+    await prisma.sportsTeam.deleteMany({});
+    return { message: 'All teams deleted' };
+  }
+
+  async deleteAllMatches() {
+    // Delete match events and matches
+    await prisma.matchEvent.deleteMany({});
+    await prisma.match.deleteMany({});
+    return { message: 'All matches deleted' };
+  }
+
+  async deleteAllTournaments() {
+    // Delete in order: match events, matches, tournaments
+    await prisma.matchEvent.deleteMany({});
+    await prisma.tournamentMatch.deleteMany({});
+    await prisma.tournament.deleteMany({});
+    return { message: 'All tournaments deleted' };
   }
 }
 

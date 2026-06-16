@@ -633,6 +633,45 @@ export class AdminService {
       data: { value, updatedBy },
     });
   }
+
+  // ============ ADMIN SETTINGS ============
+  async getAdminSettings() {
+    let settings = await prisma.adminSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.adminSettings.create({
+        data: {
+          enableTournamentMatches: true,
+          enableRegularSportMatches: true,
+          enablePushNotifications: true,
+          tournamentVisibilityWeb: true,
+          tournamentVisibilityMobile: true,
+          regularMatchesVisibilityWeb: true,
+          regularMatchesVisibilityMobile: true,
+          sportsTabVisibilityWeb: true,
+          sportsTabVisibilityMobile: true,
+        },
+      });
+    }
+    return settings;
+  }
+
+  async updateAdminSettings(data: {
+    enableTournamentMatches?: boolean;
+    enableRegularSportMatches?: boolean;
+    enablePushNotifications?: boolean;
+    tournamentVisibilityWeb?: boolean;
+    tournamentVisibilityMobile?: boolean;
+    regularMatchesVisibilityWeb?: boolean;
+    regularMatchesVisibilityMobile?: boolean;
+    sportsTabVisibilityWeb?: boolean;
+    sportsTabVisibilityMobile?: boolean;
+  }) {
+    const settings = await this.getAdminSettings();
+    return prisma.adminSettings.update({
+      where: { id: settings.id },
+      data,
+    });
+  }
 }
 
 export const adminService = new AdminService();

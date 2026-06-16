@@ -14,6 +14,20 @@ class SportsService {
     async createTeam(input) {
         return database_1.default.sportsTeam.create({ data: input });
     }
+    async updateTeam(teamId, data) {
+        const team = await database_1.default.sportsTeam.findUnique({ where: { id: teamId } });
+        if (!team)
+            throw new errorHandler_1.AppError(404, 'TEAM_NOT_FOUND', 'Team not found');
+        return database_1.default.sportsTeam.update({ where: { id: teamId }, data });
+    }
+    async deleteTeam(teamId) {
+        const team = await database_1.default.sportsTeam.findUnique({ where: { id: teamId } });
+        if (!team)
+            throw new errorHandler_1.AppError(404, 'TEAM_NOT_FOUND', 'Team not found');
+        // Delete players first due to foreign key constraint
+        await database_1.default.teamPlayer.deleteMany({ where: { teamId } });
+        return database_1.default.sportsTeam.delete({ where: { id: teamId } });
+    }
     async getTeams() {
         return database_1.default.sportsTeam.findMany({
             include: { _count: { select: { players: true } }, players: { select: { userId: true } } },
@@ -299,6 +313,35 @@ class SportsService {
             orderBy: { _count: { id: 'desc' } },
             take: limit,
         });
+    }
+    async resetAllData() {
+        // Delete in order to respect foreign key constraints
+        await database_1.default.matchEvent.deleteMany({});
+        await database_1.default.match.deleteMany({});
+        await database_1.default.tournamentMatch.deleteMany({});
+        await database_1.default.tournament.deleteMany({});
+        await database_1.default.teamPlayer.deleteMany({});
+        await database_1.default.sportsTeam.deleteMany({});
+        return { message: 'All sports data cleared' };
+    }
+    async deleteAllTeams() {
+        // Delete team players first, then teams
+        await database_1.default.teamPlayer.deleteMany({});
+        await database_1.default.sportsTeam.deleteMany({});
+        return { message: 'All teams deleted' };
+    }
+    async deleteAllMatches() {
+        // Delete match events and matches
+        await database_1.default.matchEvent.deleteMany({});
+        await database_1.default.match.deleteMany({});
+        return { message: 'All matches deleted' };
+    }
+    async deleteAllTournaments() {
+        // Delete in order: match events, matches, tournaments
+        await database_1.default.matchEvent.deleteMany({});
+        await database_1.default.tournamentMatch.deleteMany({});
+        await database_1.default.tournament.deleteMany({});
+        return { message: 'All tournaments deleted' };
     }
 }
 exports.SportsService = SportsService;

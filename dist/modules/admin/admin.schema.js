@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changeUserRoleSchema = exports.resetPasswordSchema = exports.adjustXpSchema = exports.assignTribeSchema = exports.updateTribeSchema = exports.createTribeSchema = exports.createUserSchema = exports.updateSessionSchema = exports.updateSessionStatusSchema = exports.createSessionSchema = void 0;
+exports.updateNavConfigSchema = exports.updateCmsConfigSchema = exports.changeUserRoleSchema = exports.resetPasswordSchema = exports.adjustXpSchema = exports.assignTribeSchema = exports.updateTribeSchema = exports.createTribeSchema = exports.createUserSchema = exports.updateSessionSchema = exports.updateSessionStatusSchema = exports.createSessionSchema = void 0;
 const zod_1 = require("zod");
 exports.createSessionSchema = zod_1.z.object({
     title: zod_1.z.string().min(1).max(200),
@@ -32,6 +32,7 @@ exports.createUserSchema = zod_1.z.object({
     email: zod_1.z.string().email().max(255),
     password: zod_1.z.string().min(8).max(100),
     name: zod_1.z.string().min(2).max(100),
+    phone: zod_1.z.string().max(20).optional(),
     role: zod_1.z.enum(['ATTENDEE', 'STAFF', 'ADMIN', 'SUPER_ADMIN']).default('ATTENDEE'),
     church: zod_1.z.string().max(200).optional(),
     diocese: zod_1.z.string().max(200).optional(),
@@ -61,5 +62,23 @@ exports.resetPasswordSchema = zod_1.z.object({
 });
 exports.changeUserRoleSchema = zod_1.z.object({
     role: zod_1.z.enum(['ATTENDEE', 'STAFF', 'ADMIN', 'SUPER_ADMIN']),
+});
+exports.updateCmsConfigSchema = zod_1.z.object({
+    appName: zod_1.z.string().max(200).optional(),
+    appNameAr: zod_1.z.string().max(200).optional(),
+    infoPageTitle: zod_1.z.string().max(200).optional(),
+    infoPageTitleAr: zod_1.z.string().max(200).optional(),
+    infoPageContent: zod_1.z.string().optional(),
+    infoPageContentAr: zod_1.z.string().optional(),
+});
+exports.updateNavConfigSchema = zod_1.z.object({
+    web: zod_1.z.array(zod_1.z.object({
+        name: zod_1.z.string(),
+        visible: zod_1.z.boolean(),
+    })).optional(),
+    mobile: zod_1.z.array(zod_1.z.object({
+        name: zod_1.z.string(),
+        visible: zod_1.z.boolean(),
+    })).optional(),
 });
 //# sourceMappingURL=admin.schema.js.map

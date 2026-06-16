@@ -34,6 +34,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodString;
     name: z.ZodString;
+    phone: z.ZodOptional<z.ZodString>;
     role: z.ZodDefault<z.ZodEnum<{
         ATTENDEE: "ATTENDEE";
         ADMIN: "ADMIN";
@@ -74,7 +75,27 @@ export declare const changeUserRoleSchema: z.ZodObject<{
         STAFF: "STAFF";
     }>;
 }, z.core.$strip>;
+export declare const updateCmsConfigSchema: z.ZodObject<{
+    appName: z.ZodOptional<z.ZodString>;
+    appNameAr: z.ZodOptional<z.ZodString>;
+    infoPageTitle: z.ZodOptional<z.ZodString>;
+    infoPageTitleAr: z.ZodOptional<z.ZodString>;
+    infoPageContent: z.ZodOptional<z.ZodString>;
+    infoPageContentAr: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const updateNavConfigSchema: z.ZodObject<{
+    web: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        name: z.ZodString;
+        visible: z.ZodBoolean;
+    }, z.core.$strip>>>;
+    mobile: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        name: z.ZodString;
+        visible: z.ZodBoolean;
+    }, z.core.$strip>>>;
+}, z.core.$strip>;
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type CreateTribeInput = z.infer<typeof createTribeSchema>;
 export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;
+export type UpdateCmsConfigInput = z.infer<typeof updateCmsConfigSchema>;
+export type UpdateNavConfigInput = z.infer<typeof updateNavConfigSchema>;

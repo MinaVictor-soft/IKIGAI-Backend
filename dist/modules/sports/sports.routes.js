@@ -14,11 +14,16 @@ router.get('/teams/:teamId', auth_1.authenticate, (0, asyncHandler_1.asyncHandle
 router.get('/matches', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.getMatches));
 router.get('/matches/:matchId', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.getMatch));
 router.get('/standings', auth_1.authenticate, (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.getStandings));
-// Admin
+// Admin - Specific routes BEFORE parameterized routes
 router.post('/teams', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, validate_1.validate)(sports_schema_1.createTeamSchema), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.createTeam));
+router.post('/teams/delete-all', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.deleteAllTeams));
+router.post('/reset-all', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.resetAllData));
+router.patch('/teams/:teamId', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.updateTeam));
+router.delete('/teams/:teamId', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.deleteTeam));
 router.post('/teams/:teamId/players', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, validate_1.validate)(sports_schema_1.addPlayerSchema), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.addPlayer));
 router.delete('/teams/:teamId/players/:userId', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.removePlayer));
 router.post('/matches', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, validate_1.validate)(sports_schema_1.createMatchSchema), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.createMatch));
+router.post('/matches/delete-all', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.deleteAllMatches));
 router.patch('/matches/:matchId/start', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.startMatch));
 router.patch('/matches/:matchId/complete', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, validate_1.validate)(sports_schema_1.updateScoreSchema), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.completeMatch));
 router.post('/matches/:matchId/events', auth_1.authenticate, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN'), (0, validate_1.validate)(sports_schema_1.addEventSchema), (0, asyncHandler_1.asyncHandler)(sports_controller_1.sportsController.addEvent));

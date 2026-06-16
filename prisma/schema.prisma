@@ -294,6 +294,11 @@ model SportsTeam {
   awayMatches    Match[]  @relation("AwayTeam")
   matchEvents    MatchEvent[]
   playerStats    PlayerStats[]
+  tournamentWins Tournament[] @relation("TournamentWinner")
+  tournamentTeams TournamentTeam[] @relation("TournamentTeamReference")
+  tournamentMatch1 TournamentMatch[] @relation("TournamentMatch1")
+  tournamentMatch2 TournamentMatch[] @relation("TournamentMatch2")
+  tournamentMatchWins TournamentMatch[] @relation("TournamentMatchWinner")
 
   @@index([points(sort: Desc), goalDifference(sort: Desc), goalsFor(sort: Desc)], map: "idx_teams_points")
   @@index([captainId], map: "idx_teams_captain")
@@ -445,6 +450,25 @@ model SystemConfig {
   @@map("system_config")
 }
 
+// ==================== ADMIN SETTINGS ====================
+
+model AdminSettings {
+  id                          String   @id @default(uuid()) @db.Uuid
+  enableTournamentMatches     Boolean  @default(true) @map("enable_tournament_matches")
+  enableRegularSportMatches   Boolean  @default(true) @map("enable_regular_sport_matches")
+  enablePushNotifications     Boolean  @default(true) @map("enable_push_notifications")
+  tournamentVisibilityWeb     Boolean  @default(true) @map("tournament_visibility_web")
+  tournamentVisibilityMobile  Boolean  @default(true) @map("tournament_visibility_mobile")
+  regularMatchesVisibilityWeb Boolean  @default(true) @map("regular_matches_visibility_web")
+  regularMatchesVisibilityMobile Boolean @default(true) @map("regular_matches_visibility_mobile")
+  sportsTabVisibilityWeb      Boolean  @default(true) @map("sports_tab_visibility_web")
+  sportsTabVisibilityMobile   Boolean  @default(true) @map("sports_tab_visibility_mobile")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
 // ==================== PUBLICATIONS ====================
 
 model PublicationCategory {
@@ -523,11 +547,14 @@ enum NotificationType {
   EVENT_CREATED
   MATCH_CREATED
   MATCH_LIVE
+  MATCH_RESULT_APPLIED
   PUBLICATION_CREATED
   ACHIEVEMENT_EARNED
   LEVEL_UP
   XP_AWARDED
   ATTENDANCE_REMINDER
+  TOURNAMENT_CREATED
+  TOURNAMENT_COMPLETED
 }
 
 // ==================== ENUMS ====================
@@ -606,5 +633,115 @@ enum EventType {
   YELLOW_CARD
   RED_CARD
   SUBSTITUTION
+}
+
+// ==================== TOURNAMENT DOMAIN ====================
+
+model Tournament {
+  id                      String              @id @default(uuid()) @db.Uuid
+  name                    String              @db.VarChar(200)
+  nameAr                  String?             @map("name_ar") @db.VarChar(200)
+  numberOfGroups          Int                 @map("number_of_groups")
+  teamsPerGroup           Int                 @map("teams_per_group")
+  teamsAdvancingPerGroup  Int                 @map("teams_advancing_per_group")
+  pointsForWin            Int                 @map("points_for_win")
+  pointsForDraw           Int                 @map("points_for_draw")
+  pointsForLoss           Int                 @map("points_for_loss")
+  status                  TournamentStatus   @default(PLANNING)
+  winnerId                String?             @map("winner_id") @db.Uuid
+  createdAt               DateTime            @default(now()) @map("created_at")
+  updatedAt               DateTime            @updatedAt @map("updated_at")
+
+  winner                  SportsTeam?         @relation("TournamentWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  groups                  TournamentGroup[]
+  tournamentTeams         TournamentTeam[]
+  tournamentMatches       TournamentMatch[]
+
+  @@index([status], map: "idx_tournament_status")
+  @@index([createdAt(sort: Desc)], map: "idx_tournament_created")
+  @@map("tournaments")
+}
+
+model TournamentGroup {
+  id            String            @id @default(uuid()) @db.Uuid
+  tournamentId  String            @map("tournament_id") @db.Uuid
+  groupName     String            @map("group_name") @db.VarChar(50)
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  tournament    Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teams         TournamentTeam[]
+
+  @@unique([tournamentId, groupName], map: "uq_tournament_group_name")
+  @@index([tournamentId], map: "idx_group_tournament")
+  @@map("tournament_groups")
+}
+
+model TournamentTeam {
+  id                String            @id @default(uuid()) @db.Uuid
+  tournamentId      String            @map("tournament_id") @db.Uuid
+  teamId            String            @map("team_id") @db.Uuid
+  groupId           String?           @map("group_id") @db.Uuid
+  points            Int               @default(0)
+  played            Int               @default(0)
+  won               Int               @default(0)
+  drawn             Int               @default(0)
+  lost              Int               @default(0)
+  goalsFor          Int               @default(0) @map("goals_for")
+  goalsAgainst      Int               @default(0) @map("goals_against")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  tournament        Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team              SportsTeam        @relation("TournamentTeamReference", fields: [teamId], references: [id], onDelete: Cascade)
+  group             TournamentGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, teamId], map: "uq_tournament_team")
+  @@index([tournamentId], map: "idx_tournament_team_tournament")
+  @@index([teamId], map: "idx_tournament_team_team")
+  @@index([groupId], map: "idx_tournament_team_group")
+  @@map("tournament_teams")
+}
+
+model TournamentMatch {
+  id                String              @id @default(uuid()) @db.Uuid
+  tournamentId      String              @map("tournament_id") @db.Uuid
+  stage             TournamentStage     @default(GROUP_STAGE)
+  team1Id           String              @map("team1_id") @db.Uuid
+  team2Id           String              @map("team2_id") @db.Uuid
+  team1Goals        Int?                @map("team1_goals")
+  team2Goals        Int?                @map("team2_goals")
+  winnerId          String?             @map("winner_id") @db.Uuid
+  status            MatchStatus         @default(SCHEDULED)
+  matchTime         DateTime?           @map("match_time")
+  matchPlace        String?             @map("match_place") @db.VarChar(255)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  tournament        Tournament          @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team1             SportsTeam          @relation("TournamentMatch1", fields: [team1Id], references: [id], onDelete: Restrict)
+  team2             SportsTeam          @relation("TournamentMatch2", fields: [team2Id], references: [id], onDelete: Restrict)
+  winner            SportsTeam?         @relation("TournamentMatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([tournamentId], map: "idx_tournament_match_tournament")
+  @@index([stage], map: "idx_tournament_match_stage")
+  @@index([status], map: "idx_tournament_match_status")
+  @@index([team1Id], map: "idx_tournament_match_team1")
+  @@index([team2Id], map: "idx_tournament_match_team2")
+  @@map("tournament_matches")
+}
+
+enum TournamentStatus {
+  PLANNING
+  GROUP_STAGE
+  KNOCKOUT
+  COMPLETED
+}
+
+enum TournamentStage {
+  GROUP_STAGE
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  FINAL
 }
 

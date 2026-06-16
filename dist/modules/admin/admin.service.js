@@ -561,6 +561,33 @@ class AdminService {
             data: { value, updatedBy },
         });
     }
+    // ============ ADMIN SETTINGS ============
+    async getAdminSettings() {
+        let settings = await database_1.default.adminSettings.findFirst();
+        if (!settings) {
+            settings = await database_1.default.adminSettings.create({
+                data: {
+                    enableTournamentMatches: true,
+                    enableRegularSportMatches: true,
+                    enablePushNotifications: true,
+                    tournamentVisibilityWeb: true,
+                    tournamentVisibilityMobile: true,
+                    regularMatchesVisibilityWeb: true,
+                    regularMatchesVisibilityMobile: true,
+                    sportsTabVisibilityWeb: true,
+                    sportsTabVisibilityMobile: true,
+                },
+            });
+        }
+        return settings;
+    }
+    async updateAdminSettings(data) {
+        const settings = await this.getAdminSettings();
+        return database_1.default.adminSettings.update({
+            where: { id: settings.id },
+            data,
+        });
+    }
 }
 exports.AdminService = AdminService;
 exports.adminService = new AdminService();

@@ -46,6 +46,8 @@ export declare class XpService {
         sportsXp: number;
         conferenceXp: number;
         name: string;
+        church: string | null;
+        diocese: string | null;
         id: string;
         avatarUrl: string | null;
         totalXp: number;

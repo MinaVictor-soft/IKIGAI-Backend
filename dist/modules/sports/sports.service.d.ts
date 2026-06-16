@@ -19,6 +19,47 @@ export declare class SportsService {
         rank: number | null;
         captainId: string | null;
     }>;
+    updateTeam(teamId: string, data: {
+        name?: string;
+        color?: string;
+    }): Promise<{
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        color: string | null;
+        points: number;
+        maxRosterSize: number;
+        logoUrl: string | null;
+        matchesPlayed: number;
+        wins: number;
+        draws: number;
+        losses: number;
+        goalsFor: number;
+        goalsAgainst: number;
+        goalDifference: number;
+        rank: number | null;
+        captainId: string | null;
+    }>;
+    deleteTeam(teamId: string): Promise<{
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        color: string | null;
+        points: number;
+        maxRosterSize: number;
+        logoUrl: string | null;
+        matchesPlayed: number;
+        wins: number;
+        draws: number;
+        losses: number;
+        goalsFor: number;
+        goalsAgainst: number;
+        goalDifference: number;
+        rank: number | null;
+        captainId: string | null;
+    }>;
     getTeams(): Promise<({
         _count: {
             players: number;
@@ -278,5 +319,17 @@ export declare class SportsService {
             id: number;
         };
     })[]>;
+    resetAllData(): Promise<{
+        message: string;
+    }>;
+    deleteAllTeams(): Promise<{
+        message: string;
+    }>;
+    deleteAllMatches(): Promise<{
+        message: string;
+    }>;
+    deleteAllTournaments(): Promise<{
+        message: string;
+    }>;
 }
 export declare const sportsService: SportsService;

@@ -171,6 +171,17 @@ export class AdminController {
     const config = await adminService.updateSystemConfig(key, value, userId);
     sendSuccess(res, config);
   }
+
+  // Admin Settings
+  async getAdminSettings(req: Request, res: Response) {
+    const settings = await adminService.getAdminSettings();
+    sendSuccess(res, settings);
+  }
+
+  async updateAdminSettings(req: Request, res: Response) {
+    const settings = await adminService.updateAdminSettings(req.body);
+    sendSuccess(res, settings);
+  }
 }
 
 export const adminController = new AdminController();

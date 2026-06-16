@@ -31,5 +31,7 @@ export declare class AdminController {
     recalculateAllLevels(req: Request, res: Response): Promise<void>;
     getSystemConfig(req: Request, res: Response): Promise<void>;
     updateSystemConfig(req: Request, res: Response): Promise<void>;
+    getAdminSettings(req: Request, res: Response): Promise<void>;
+    updateAdminSettings(req: Request, res: Response): Promise<void>;
 }
 export declare const adminController: AdminController;

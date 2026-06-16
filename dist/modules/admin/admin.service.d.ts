@@ -540,5 +540,43 @@ export declare class AdminService {
         category: string;
         updatedBy: string | null;
     }>;
+    getAdminSettings(): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        enableTournamentMatches: boolean;
+        enableRegularSportMatches: boolean;
+        enablePushNotifications: boolean;
+        tournamentVisibilityWeb: boolean;
+        tournamentVisibilityMobile: boolean;
+        regularMatchesVisibilityWeb: boolean;
+        regularMatchesVisibilityMobile: boolean;
+        sportsTabVisibilityWeb: boolean;
+        sportsTabVisibilityMobile: boolean;
+    }>;
+    updateAdminSettings(data: {
+        enableTournamentMatches?: boolean;
+        enableRegularSportMatches?: boolean;
+        enablePushNotifications?: boolean;
+        tournamentVisibilityWeb?: boolean;
+        tournamentVisibilityMobile?: boolean;
+        regularMatchesVisibilityWeb?: boolean;
+        regularMatchesVisibilityMobile?: boolean;
+        sportsTabVisibilityWeb?: boolean;
+        sportsTabVisibilityMobile?: boolean;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        enableTournamentMatches: boolean;
+        enableRegularSportMatches: boolean;
+        enablePushNotifications: boolean;
+        tournamentVisibilityWeb: boolean;
+        tournamentVisibilityMobile: boolean;
+        regularMatchesVisibilityWeb: boolean;
+        regularMatchesVisibilityMobile: boolean;
+        sportsTabVisibilityWeb: boolean;
+        sportsTabVisibilityMobile: boolean;
+    }>;
 }
 export declare const adminService: AdminService;
