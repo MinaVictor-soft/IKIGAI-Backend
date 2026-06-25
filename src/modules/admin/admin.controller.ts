@@ -2,10 +2,11 @@ import { Request, Response } from 'express';
 import { adminService } from './admin.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
 import { getParam, getQuery } from '../../utils/params';
-import archiver from 'archiver';
 import path from 'path';
 import fs from 'fs';
 import prisma from '../../config/database';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { ZipArchive } = require('archiver') as { ZipArchive: new (opts?: object) => any };
 
 export class AdminController {
   // Sessions
@@ -95,17 +96,7 @@ export class AdminController {
   }
 
   async downloadBackup(req: Request, res: Response) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `ikigai-backup-${timestamp}.zip`;
-
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-    const archive = archiver('zip', { zlib: { level: 6 } });
-    archive.on('error', (err: Error) => { throw err; });
-    archive.pipe(res);
-
-    // Export all database tables as JSON
+    // First do all DB queries (before touching the response stream)
     const [
       users, tribes, sessions, attendance, xpTransactions, levels,
       quizzes, quizQuestions, quizSubmissions, bonusQrCodes, bonusClaims,
@@ -114,7 +105,7 @@ export class AdminController {
       publications, notifications, tournaments, tournamentGroups,
       tournamentTeams, tournamentMatches,
     ] = await Promise.all([
-      prisma.user.findMany({ select: { id: true, email: true, name: true, phone: true, role: true, church: true, diocese: true, xp: true, level: true, createdAt: true } }),
+      prisma.user.findMany({ select: { id: true, email: true, name: true, phone: true, role: true, church: true, diocese: true, totalXp: true, status: true, createdAt: true } }),
       prisma.tribe.findMany(),
       prisma.conferenceSession.findMany(),
       prisma.attendance.findMany(),
@@ -152,15 +143,29 @@ export class AdminController {
       tournamentTeams, tournamentMatches,
     };
 
+    // Now stream the ZIP
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `ikigai-backup-${timestamp}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const archive = new ZipArchive({ zlib: { level: 6 } });
+    archive.pipe(res);
+
     archive.append(JSON.stringify(dbData, null, 2), { name: 'database.json' });
 
-    // Include uploads directory if it exists
     const uploadsDir = path.join(__dirname, '../../uploads');
     if (fs.existsSync(uploadsDir)) {
       archive.directory(uploadsDir, 'uploads');
     }
 
-    await archive.finalize();
+    await new Promise<void>((resolve, reject) => {
+      archive.on('error', reject);
+      res.on('error', reject);
+      res.on('finish', resolve);
+      archive.finalize();
+    });
   }
 
   async adjustXp(req: Request, res: Response) {
