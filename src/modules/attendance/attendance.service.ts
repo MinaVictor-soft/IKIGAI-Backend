@@ -30,6 +30,14 @@ export class AttendanceService {
     // Get XP reward (could be different for late attendance)
     const xpAmount = isLate ? Math.floor(session.xpReward * 0.5) : session.xpReward;
 
+    // Check if user already scanned this session
+    const existingAttendance = await prisma.attendance.findUnique({
+      where: { userId_sessionId: { userId, sessionId: session.id } },
+    });
+    if (existingAttendance) {
+      throw new AppError(409, 'ALREADY_SCANNED', 'You have already scanned this QR code. Attendance can only be recorded once per session.');
+    }
+
     // Use upsert-style approach to handle concurrent scans safely
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -65,14 +73,7 @@ export class AttendanceService {
     } catch (err) {
       // Handle unique constraint violation (concurrent duplicate scan)
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        const existing = await prisma.attendance.findUnique({
-          where: { userId_sessionId: { userId, sessionId: session.id } },
-        });
-        return {
-          alreadyRecorded: true,
-          attendance: existing,
-          session: { id: session.id, title: session.title },
-        };
+        throw new AppError(409, 'ALREADY_SCANNED', 'You have already scanned this QR code. Attendance can only be recorded once per session.');
       }
       throw err;
     }
