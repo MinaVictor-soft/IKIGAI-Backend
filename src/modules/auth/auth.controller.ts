@@ -37,6 +37,11 @@ export class AuthController {
     const result = await authService.changePassword(req.user!.userId, req.body);
     sendSuccess(res, result);
   }
+
+  async verifyPassword(req: Request, res: Response) {
+    const result = await authService.verifyPassword(req.user!.userId, req.body.password);
+    sendSuccess(res, result);
+  }
 }
 
 export const authController = new AuthController();

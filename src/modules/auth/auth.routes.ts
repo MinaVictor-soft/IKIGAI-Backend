@@ -14,5 +14,6 @@ router.post('/refresh', validate(refreshTokenSchema), asyncHandler(authControlle
 router.post('/logout', authenticate, validate(refreshTokenSchema), asyncHandler(authController.logout));
 router.get('/me', authenticate, asyncHandler(authController.me));
 router.post('/change-password', authenticate, validate(changePasswordSchema), asyncHandler(authController.changePassword));
+router.post('/verify-password', authenticate, asyncHandler(authController.verifyPassword));
 
 export default router;

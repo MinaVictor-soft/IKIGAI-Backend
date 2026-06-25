@@ -217,6 +217,14 @@ export class AuthService {
     return { message: 'Password changed successfully' };
   }
 
+  async verifyPassword(userId: string, password: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) throw new AppError(401, 'INVALID_PASSWORD', 'Incorrect password');
+    return { valid: true };
+  }
+
   private generateAccessToken(user: { id: string; email: string; role: string }): string {
     const payload: JwtPayload = {
       userId: user.id,
