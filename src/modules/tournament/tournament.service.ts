@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { xpService } from '../xp/xp.service';
 import { notificationsService } from '../notifications/notifications.service';
 import { pushNotificationsService } from '../push-notifications/push-notifications.service';
+import { AppError } from '../../middleware/errorHandler';
 
 export interface CreateTournamentInput {
   name: string;
@@ -843,6 +844,16 @@ export class TournamentService {
     }
 
     return bracket;
+  }
+
+  async deleteTournament(tournamentId: string) {
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) throw new AppError(404, 'TOURNAMENT_NOT_FOUND', 'Tournament not found');
+    await prisma.tournamentMatch.deleteMany({ where: { tournament: { id: tournamentId } } });
+    await prisma.tournamentTeam.deleteMany({ where: { tournamentId } });
+    await prisma.tournamentGroup.deleteMany({ where: { tournamentId } });
+    await prisma.tournament.delete({ where: { id: tournamentId } });
+    return { message: 'Tournament deleted' };
   }
 
   async deleteAllTournaments() {

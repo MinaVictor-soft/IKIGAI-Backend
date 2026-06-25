@@ -25,6 +25,7 @@ router.post('/teams/:teamId/players', authenticate, authorize('ADMIN', 'SUPER_AD
 router.delete('/teams/:teamId/players/:userId', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(sportsController.removePlayer));
 router.post('/matches', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(createMatchSchema), asyncHandler(sportsController.createMatch));
 router.post('/matches/delete-all', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(sportsController.deleteAllMatches));
+router.delete('/matches/:matchId', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(sportsController.deleteMatch));
 router.patch('/matches/:matchId/start', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(sportsController.startMatch));
 router.patch('/matches/:matchId/complete', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(updateScoreSchema), asyncHandler(sportsController.completeMatch));
 router.post('/matches/:matchId/events', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(addEventSchema), asyncHandler(sportsController.addEvent));

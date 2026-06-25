@@ -35,6 +35,11 @@ export class QuizController {
     sendSuccess(res, quiz);
   }
 
+  async deleteQuiz(req: Request, res: Response) {
+    const result = await quizService.deleteQuiz(getParam(req, 'quizId'));
+    sendSuccess(res, result);
+  }
+
   async getMySubmissions(req: Request, res: Response) {
     const submissions = await quizService.getMySubmissions(req.user!.userId);
     sendSuccess(res, submissions);

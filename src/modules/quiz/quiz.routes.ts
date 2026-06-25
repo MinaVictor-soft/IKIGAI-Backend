@@ -18,5 +18,6 @@ router.post('/:quizId/submit', authenticate, validate(submitQuizSchema), asyncHa
 router.post('/', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(createQuizSchema), asyncHandler(quizController.create));
 router.post('/:quizId/questions', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(createQuestionSchema), asyncHandler(quizController.addQuestion));
 router.patch('/:quizId/status', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(quizController.updateStatus));
+router.delete('/:quizId', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(quizController.deleteQuiz));
 
 export default router;

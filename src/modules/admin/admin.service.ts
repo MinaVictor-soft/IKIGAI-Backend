@@ -55,6 +55,14 @@ export class AdminService {
     return prisma.conferenceSession.update({ where: { id: sessionId }, data });
   }
 
+  async deleteSession(sessionId: string) {
+    const session = await prisma.conferenceSession.findUnique({ where: { id: sessionId } });
+    if (!session) throw new AppError(404, 'SESSION_NOT_FOUND', 'Session not found');
+    await prisma.attendance.deleteMany({ where: { sessionId } });
+    await prisma.conferenceSession.delete({ where: { id: sessionId } });
+    return { message: 'Session deleted' };
+  }
+
   async updateSessionStatus(sessionId: string, status: string) {
     const session = await prisma.conferenceSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new AppError(404, 'SESSION_NOT_FOUND', 'Session not found');
@@ -311,6 +319,15 @@ export class AdminService {
       where: { id: tribeId },
       data: input,
     });
+  }
+
+  async deleteTribe(tribeId: string) {
+    const tribe = await prisma.tribe.findUnique({ where: { id: tribeId } });
+    if (!tribe) throw new AppError(404, 'TRIBE_NOT_FOUND', 'Tribe not found');
+    // Unassign all members before deleting
+    await prisma.user.updateMany({ where: { tribeId }, data: { tribeId: null } });
+    await prisma.tribe.delete({ where: { id: tribeId } });
+    return { message: 'Tribe deleted' };
   }
 
   // ============ DASHBOARD STATS ============

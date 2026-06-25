@@ -89,6 +89,11 @@ export class SportsController {
     sendSuccess(res, result);
   }
 
+  async deleteMatch(req: Request, res: Response) {
+    const result = await sportsService.deleteMatch(getParam(req, 'matchId'));
+    sendSuccess(res, result);
+  }
+
   async deleteAllMatches(req: Request, res: Response) {
     const result = await sportsService.deleteAllMatches();
     sendSuccess(res, result);

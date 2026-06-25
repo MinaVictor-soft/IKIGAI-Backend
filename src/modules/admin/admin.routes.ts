@@ -21,6 +21,7 @@ router.post('/sessions', validate(createSessionSchema), asyncHandler(adminContro
 router.get('/sessions', asyncHandler(adminController.getSessions));
 router.patch('/sessions/:sessionId', validate(updateSessionSchema), asyncHandler(adminController.updateSession));
 router.patch('/sessions/:sessionId/status', validate(updateSessionStatusSchema), asyncHandler(adminController.updateSessionStatus));
+router.delete('/sessions/:sessionId', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.deleteSession));
 router.post('/sessions/:sessionId/regenerate-qr', asyncHandler(adminController.regenerateQr));
 
 // Users
@@ -41,6 +42,7 @@ router.get('/bonus/:bonusQrId/claims', asyncHandler(adminController.getBonusQrCl
 router.post('/tribes', validate(createTribeSchema), asyncHandler(adminController.createTribe));
 router.get('/tribes', asyncHandler(adminController.getTribes));
 router.patch('/tribes/:tribeId', validate(updateTribeSchema), asyncHandler(adminController.updateTribe));
+router.delete('/tribes/:tribeId', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.deleteTribe));
 
 // Quizzes
 router.get('/quizzes', asyncHandler(adminController.getAllQuizzes));

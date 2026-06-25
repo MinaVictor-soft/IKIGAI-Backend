@@ -195,6 +195,15 @@ export class QuizService {
     };
   }
 
+  async deleteQuiz(quizId: string) {
+    const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
+    if (!quiz) throw new AppError(404, 'QUIZ_NOT_FOUND', 'Quiz not found');
+    await prisma.quizSubmission.deleteMany({ where: { quizId } });
+    await prisma.quizQuestion.deleteMany({ where: { quizId } });
+    await prisma.quiz.delete({ where: { id: quizId } });
+    return { message: 'Quiz deleted' };
+  }
+
   async updateQuizStatus(quizId: string, status: 'DRAFT' | 'ACTIVE' | 'CLOSED') {
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
     if (!quiz) throw new AppError(404, 'QUIZ_NOT_FOUND', 'Quiz not found');

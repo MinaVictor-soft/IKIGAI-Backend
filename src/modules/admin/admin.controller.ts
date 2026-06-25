@@ -25,6 +25,11 @@ export class AdminController {
     sendSuccess(res, session);
   }
 
+  async deleteSession(req: Request, res: Response) {
+    const result = await adminService.deleteSession(getParam(req, 'sessionId'));
+    sendSuccess(res, result);
+  }
+
   async updateSessionStatus(req: Request, res: Response) {
     const session = await adminService.updateSessionStatus(getParam(req, 'sessionId'), req.body.status);
     sendSuccess(res, session);
@@ -82,6 +87,11 @@ export class AdminController {
   async updateTribe(req: Request, res: Response) {
     const tribe = await adminService.updateTribe(getParam(req, 'tribeId'), req.body);
     sendSuccess(res, tribe);
+  }
+
+  async deleteTribe(req: Request, res: Response) {
+    const result = await adminService.deleteTribe(getParam(req, 'tribeId'));
+    sendSuccess(res, result);
   }
 
   // Dashboard

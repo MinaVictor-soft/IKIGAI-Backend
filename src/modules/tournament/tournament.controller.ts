@@ -109,6 +109,11 @@ export const tournamentController = {
     });
   }),
 
+  deleteTournament: asyncHandler(async (req: Request, res: Response) => {
+    const result = await service.deleteTournament(req.params.id);
+    res.json({ success: true, data: result });
+  }),
+
   deleteAllTournaments: asyncHandler(async (req: Request, res: Response) => {
     const result = await service.deleteAllTournaments();
     res.json({

@@ -366,8 +366,18 @@ export class SportsService {
     return { message: 'All teams deleted' };
   }
 
+  async deleteMatch(matchId: string) {
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
+    if (!match) throw new AppError(404, 'MATCH_NOT_FOUND', 'Match not found');
+    await prisma.playerStats.deleteMany({ where: { matchId } });
+    await prisma.matchEvent.deleteMany({ where: { matchId } });
+    await prisma.match.delete({ where: { id: matchId } });
+    return { message: 'Match deleted' };
+  }
+
   async deleteAllMatches() {
     // Delete match events and matches
+    await prisma.playerStats.deleteMany({});
     await prisma.matchEvent.deleteMany({});
     await prisma.match.deleteMany({});
     return { message: 'All matches deleted' };

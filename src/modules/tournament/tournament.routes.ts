@@ -32,6 +32,7 @@ const updateMatchSchema = z.object({
 // Routes
 router.post('/', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), validate(createTournamentSchema), tournamentController.createTournament);
 router.post('/delete-all', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), tournamentController.deleteAllTournaments);
+router.delete('/:id', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), tournamentController.deleteTournament);
 router.get('/', authenticate, tournamentController.listTournaments);
 router.get('/upcoming-matches', authenticate, tournamentController.getUpcomingTournamentMatches);
 router.get('/:id', authenticate, tournamentController.getTournament);
