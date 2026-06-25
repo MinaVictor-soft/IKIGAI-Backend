@@ -67,4 +67,7 @@ router.patch('/settings', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminC
 // Bulk Operations (SUPER_ADMIN only)
 router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));
 
+// Backup (SUPER_ADMIN only)
+router.get('/backup', authorize('SUPER_ADMIN'), asyncHandler(adminController.downloadBackup));
+
 export default router;

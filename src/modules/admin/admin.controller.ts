@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import { adminService } from './admin.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
 import { getParam, getQuery } from '../../utils/params';
+import archiver from 'archiver';
+import path from 'path';
+import fs from 'fs';
+import prisma from '../../config/database';
 
 export class AdminController {
   // Sessions
@@ -88,6 +92,75 @@ export class AdminController {
   async deleteAllAttendees(req: Request, res: Response) {
     const result = await adminService.softDeleteAllAttendees();
     sendSuccess(res, result);
+  }
+
+  async downloadBackup(req: Request, res: Response) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `ikigai-backup-${timestamp}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.on('error', (err: Error) => { throw err; });
+    archive.pipe(res);
+
+    // Export all database tables as JSON
+    const [
+      users, tribes, sessions, attendance, xpTransactions, levels,
+      quizzes, quizQuestions, quizSubmissions, bonusQrCodes, bonusClaims,
+      sportsTeams, teamPlayers, matches, matchEvents, playerStats,
+      auditLogs, systemConfig, adminSettings, publicationCategories,
+      publications, notifications, tournaments, tournamentGroups,
+      tournamentTeams, tournamentMatches,
+    ] = await Promise.all([
+      prisma.user.findMany({ select: { id: true, email: true, name: true, phone: true, role: true, church: true, diocese: true, xp: true, level: true, createdAt: true } }),
+      prisma.tribe.findMany(),
+      prisma.conferenceSession.findMany(),
+      prisma.attendance.findMany(),
+      prisma.xpTransaction.findMany(),
+      prisma.level.findMany(),
+      prisma.quiz.findMany(),
+      prisma.quizQuestion.findMany(),
+      prisma.quizSubmission.findMany(),
+      prisma.bonusQrCode.findMany(),
+      prisma.bonusClaim.findMany(),
+      prisma.sportsTeam.findMany(),
+      prisma.teamPlayer.findMany(),
+      prisma.match.findMany(),
+      prisma.matchEvent.findMany(),
+      prisma.playerStats.findMany(),
+      prisma.auditLog.findMany(),
+      prisma.systemConfig.findMany(),
+      prisma.adminSettings.findMany(),
+      prisma.publicationCategory.findMany(),
+      prisma.publication.findMany(),
+      prisma.notification.findMany(),
+      prisma.tournament.findMany(),
+      prisma.tournamentGroup.findMany(),
+      prisma.tournamentTeam.findMany(),
+      prisma.tournamentMatch.findMany(),
+    ]);
+
+    const dbData = {
+      exportedAt: new Date().toISOString(),
+      users, tribes, sessions, attendance, xpTransactions, levels,
+      quizzes, quizQuestions, quizSubmissions, bonusQrCodes, bonusClaims,
+      sportsTeams, teamPlayers, matches, matchEvents, playerStats,
+      auditLogs, systemConfig, adminSettings, publicationCategories,
+      publications, notifications, tournaments, tournamentGroups,
+      tournamentTeams, tournamentMatches,
+    };
+
+    archive.append(JSON.stringify(dbData, null, 2), { name: 'database.json' });
+
+    // Include uploads directory if it exists
+    const uploadsDir = path.join(__dirname, '../../uploads');
+    if (fs.existsSync(uploadsDir)) {
+      archive.directory(uploadsDir, 'uploads');
+    }
+
+    await archive.finalize();
   }
 
   async adjustXp(req: Request, res: Response) {
