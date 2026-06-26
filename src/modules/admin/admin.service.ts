@@ -139,7 +139,7 @@ export class AdminService {
 
   async createUser(input: CreateUserInput) {
     const existing = await prisma.user.findFirst({
-      where: { email: input.email, deletedAt: null },
+      where: { email: input.email },
     });
     if (existing) throw new AppError(409, 'EMAIL_EXISTS', 'Email already in use');
 
