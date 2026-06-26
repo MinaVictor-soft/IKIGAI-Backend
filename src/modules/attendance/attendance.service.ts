@@ -18,17 +18,12 @@ export class AttendanceService {
       throw new AppError(422, 'SESSION_NOT_ACTIVE', 'This session is not currently accepting attendance.');
     }
 
-    // QR is valid as long as session is ACTIVE (until session ends)
+    // Scan is allowed as long as the session is ACTIVE (admin controls when it ends via status)
     const now = new Date();
-    if (now > session.endTime) {
-      throw new AppError(422, 'OUTSIDE_ATTENDANCE_WINDOW', 'Attendance window has closed for this session.');
-    }
+    const isLate = session.startTime ? now > session.startTime : false;
 
-    // Determine if late
-    const isLate = now > session.endTime;
-
-    // Get XP reward (could be different for late attendance)
-    const xpAmount = isLate ? Math.floor(session.xpReward * 0.5) : session.xpReward;
+    // Full XP while session is active
+    const xpAmount = session.xpReward;
 
     // Check if user already scanned this session
     const existingAttendance = await prisma.attendance.findUnique({

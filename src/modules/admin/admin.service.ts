@@ -578,7 +578,14 @@ export class AdminService {
   }
 
   async createLevel(data: { name: string; displayOrder: number; minXp: number; maxXp?: number; badgeUrl?: string; color?: string }) {
-    return prisma.level.create({ data });
+    try {
+      return await prisma.level.create({ data });
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        throw new AppError(409, 'LEVEL_EXISTS', 'Level with this name or displayOrder already exists');
+      }
+      throw e;
+    }
   }
 
   async updateLevel(levelId: string, data: { name?: string; displayOrder?: number; minXp?: number; maxXp?: number; badgeUrl?: string; color?: string }) {
@@ -645,9 +652,10 @@ export class AdminService {
   }
 
   async updateSystemConfig(key: string, value: any, updatedBy: string) {
-    return prisma.systemConfig.update({
+    return prisma.systemConfig.upsert({
       where: { key },
-      data: { value, updatedBy },
+      update: { value, updatedBy },
+      create: { key, value, updatedBy, category: 'GENERAL' },
     });
   }
 

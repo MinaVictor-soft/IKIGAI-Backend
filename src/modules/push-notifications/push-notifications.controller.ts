@@ -5,16 +5,17 @@ export class PushNotificationsController {
   async registerToken(req: Request, res: Response) {
     try {
       const userId = (req.user as any).userId;
-      const { pushToken, deviceId } = req.body;
+      const { pushToken, token, deviceId } = req.body;
+      const resolvedToken = pushToken || token;
 
-      if (!pushToken) {
+      if (!resolvedToken) {
         return res.status(400).json({
           success: false,
           error: { code: 'INVALID_REQUEST', message: 'Push token is required' },
         });
       }
 
-      const registered = await pushNotificationsService.registerPushToken(userId, pushToken, deviceId);
+      const registered = await pushNotificationsService.registerPushToken(userId, resolvedToken, deviceId);
 
       if (!registered) {
         return res.status(500).json({
@@ -59,6 +60,23 @@ export class PushNotificationsController {
         success: false,
         error: { code: 'SERVER_ERROR', message: 'Failed to deactivate push token' },
       });
+    }
+  }
+
+  async broadcast(req: Request, res: Response) {
+    try {
+      const { title, body, data } = req.body;
+      if (!title || !body) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_REQUEST', message: 'title and body are required' },
+        });
+      }
+      const sent = await pushNotificationsService.sendBroadcastNotification(title, body, data);
+      res.json({ success: true, data: { sent } });
+    } catch (error) {
+      console.error('Error broadcasting:', error);
+      res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Broadcast failed' } });
     }
   }
 }

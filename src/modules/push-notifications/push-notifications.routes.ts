@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../../middleware/auth';
+import { authenticate, authorize } from '../../middleware/auth';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { PushNotificationsController } from './push-notifications.controller';
 
@@ -18,6 +18,21 @@ router.post(
   '/deactivate-token',
   authenticate,
   asyncHandler((req, res) => controller.deactivateToken(req, res))
+);
+
+// Broadcast push notification (ADMIN+)
+router.post(
+  '/broadcast',
+  authenticate,
+  authorize('ADMIN', 'SUPER_ADMIN'),
+  asyncHandler((req, res) => controller.broadcast(req, res))
+);
+
+// Register token (alias for easier client usage)
+router.post(
+  '/register',
+  authenticate,
+  asyncHandler((req, res) => controller.registerToken(req, res))
 );
 
 export default router;

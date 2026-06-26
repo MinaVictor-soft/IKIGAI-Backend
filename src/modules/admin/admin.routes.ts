@@ -19,6 +19,7 @@ router.get('/stats', asyncHandler(adminController.stats));
 // Sessions
 router.post('/sessions', validate(createSessionSchema), asyncHandler(adminController.createSession));
 router.get('/sessions', asyncHandler(adminController.getSessions));
+router.get('/sessions/:sessionId', asyncHandler(adminController.getSessionDetail));
 router.patch('/sessions/:sessionId', validate(updateSessionSchema), asyncHandler(adminController.updateSession));
 router.patch('/sessions/:sessionId/status', validate(updateSessionStatusSchema), asyncHandler(adminController.updateSessionStatus));
 router.delete('/sessions/:sessionId', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.deleteSession));
@@ -27,6 +28,8 @@ router.post('/sessions/:sessionId/regenerate-qr', asyncHandler(adminController.r
 // Users
 router.post('/users', validate(createUserSchema), asyncHandler(adminController.createUser));
 router.get('/users', asyncHandler(adminController.getUsers));
+// NOTE: static routes MUST come before parameterised :userId routes
+router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));
 router.patch('/users/:userId/tribe', validate(assignTribeSchema), asyncHandler(adminController.assignTribe));
 router.patch('/users/:userId/role', validate(changeUserRoleSchema), asyncHandler(adminController.changeUserRole));
 router.patch('/users/:userId/xp', validate(adjustXpSchema), asyncHandler(adminController.adjustXp));
@@ -65,9 +68,6 @@ router.patch('/system-config/:key', authorize('ADMIN', 'SUPER_ADMIN'), asyncHand
 
 // Admin Settings - PATCH only (requires ADMIN)
 router.patch('/settings', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateAdminSettings));
-
-// Bulk Operations (SUPER_ADMIN only)
-router.delete('/users/attendees', authorize('SUPER_ADMIN'), asyncHandler(adminController.deleteAllAttendees));
 
 // Backup (SUPER_ADMIN only)
 router.get('/backup', authorize('SUPER_ADMIN'), asyncHandler(adminController.downloadBackup));
