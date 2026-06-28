@@ -11,7 +11,7 @@ const router = Router();
 router.get('/settings', asyncHandler(adminController.getAdminSettings));
 
 // All admin routes require STAFF, ADMIN or SUPER_ADMIN
-router.use(authenticate, authorize('STAFF', 'ADMIN', 'SUPER_ADMIN'));
+router.use(authenticate, authorize('ADMIN', 'SUPER_ADMIN'));
 
 // Dashboard
 router.get('/stats', asyncHandler(adminController.stats));

@@ -79,32 +79,7 @@ export class XpService {
       throw new AppError(404, 'USER_NOT_FOUND', 'Target user not found');
     }
 
-    // Check admin daily cap
-    const admin = await prisma.user.findUnique({ where: { id: adminId } });
-    if (admin?.role === 'ADMIN') {
-      // Per-award cap: 100
-      if (amount > 100) {
-        throw new AppError(403, 'AMOUNT_EXCEEDS_LIMIT', 'ADMIN can award maximum 100 XP per award');
-      }
-
-      // Daily cap: 500
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      const todayAwards = await prisma.xpTransaction.aggregate({
-        where: {
-          awardedBy: adminId,
-          sourceType: { in: ['ADMIN', 'STAFF_AWARD'] },
-          createdAt: { gte: todayStart },
-        },
-        _sum: { amount: true },
-      });
-
-      const totalToday = todayAwards._sum.amount || 0;
-      if (totalToday + amount > 500) {
-        throw new AppError(429, 'DAILY_LIMIT_REACHED', `Daily award limit reached. Remaining: ${500 - totalToday} XP`);
-      }
-    }
+    // No XP cap for ADMIN or SUPER_ADMIN — unlimited awards
 
     // Award XP
     const result = await prisma.$transaction(async (tx) => {
