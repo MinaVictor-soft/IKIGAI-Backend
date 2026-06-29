@@ -70,6 +70,9 @@ router.patch('/system-config/:key', authorize('ADMIN', 'SUPER_ADMIN'), asyncHand
 router.patch('/settings', authorize('ADMIN', 'SUPER_ADMIN'), asyncHandler(adminController.updateAdminSettings));
 
 // Backup (SUPER_ADMIN only)
-router.get('/backup', authorize('SUPER_ADMIN'), asyncHandler(adminController.downloadBackup));
+router.post('/backup/trigger', authorize('SUPER_ADMIN'), asyncHandler(adminController.triggerBackup));
+router.get('/backup/list', authorize('SUPER_ADMIN'), asyncHandler(adminController.getBackupList));
+router.get('/backup/:filename/download', authorize('SUPER_ADMIN'), asyncHandler(adminController.downloadBackupFile));
+router.post('/backup/:filename/restore', authorize('SUPER_ADMIN'), asyncHandler(adminController.restoreBackupFile));
 
 export default router;
