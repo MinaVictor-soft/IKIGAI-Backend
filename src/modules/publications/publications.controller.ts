@@ -3,7 +3,7 @@ import { publicationsService } from './publications.service';
 import { sendSuccess, sendCreated } from '../../utils/response';
 import { getParam, getQuery } from '../../utils/params';
 import { AppError } from '../../middleware/errorHandler';
-import { env } from '../../config/env';
+import { uploadToStorage } from '../../services/storage.service';
 
 class PublicationsController {
   // Admin: create publication (with URL)
@@ -12,7 +12,7 @@ class PublicationsController {
     sendCreated(res, result);
   }
 
-  // Admin: upload file and create publication
+  // Admin: upload file and create publication (stored in Replit App Storage)
   async uploadAndCreate(req: Request, res: Response) {
     if (!req.file) {
       throw new AppError(400, 'NO_FILE', 'File is required');
@@ -23,8 +23,12 @@ class PublicationsController {
       throw new AppError(400, 'MISSING_FIELDS', 'title and categoryId are required');
     }
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const contentUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    const { url: contentUrl } = await uploadToStorage(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      'publications'
+    );
 
     const result = await publicationsService.create({
       title,
