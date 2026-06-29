@@ -1,25 +1,5 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { AppError } from './errorHandler';
-
-const UPLOAD_DIR = path.join(__dirname, '../../uploads');
-
-// Ensure uploads directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
-  },
-});
 
 const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
@@ -38,9 +18,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 };
 
 export const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
 });
-
-export const UPLOAD_DIR_PATH = UPLOAD_DIR;
