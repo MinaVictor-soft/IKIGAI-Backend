@@ -2,11 +2,13 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import compression from 'compression';
+import cron from 'node-cron';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { generalLimiter } from './middleware/rateLimiter';
+import { streamFromStorage } from './services/storage.service';
 
 // Route imports
 import authRoutes from './modules/auth/auth.routes';
@@ -29,8 +31,14 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(generalLimiter);
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve files stored in Replit App Storage
+// URL pattern: /api/v1/files/public/publications/<filename>
+app.get('/api/v1/files/*key', async (req, res) => {
+  const raw = (req.params as any).key as string | string[];
+  const key = Array.isArray(raw) ? raw.join('/') : raw;
+  if (!key) return res.status(400).json({ error: 'Missing file key' });
+  await streamFromStorage(key, res);
+});
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -75,6 +83,28 @@ if (env.NODE_ENV === 'production') {
 app.listen(env.PORT, '0.0.0.0', () => {
   console.log(`🚀 IKIGAI Quest API running on port ${env.PORT}`);
   console.log(`   Environment: ${env.NODE_ENV}`);
+
+  // Morning backup — 07:00 daily
+  cron.schedule('0 7 * * *', async () => {
+    try {
+      const { runBackup } = await import('./services/backup.service');
+      await runBackup('morning');
+    } catch (err) {
+      console.error('[backup] Morning backup failed:', err);
+    }
+  });
+
+  // Evening backup — 19:00 daily
+  cron.schedule('0 19 * * *', async () => {
+    try {
+      const { runBackup } = await import('./services/backup.service');
+      await runBackup('evening');
+    } catch (err) {
+      console.error('[backup] Evening backup failed:', err);
+    }
+  });
+
+  console.log('   Backups scheduled: 07:00 (morning) + 19:00 (evening) daily');
 });
 
 export default app;
