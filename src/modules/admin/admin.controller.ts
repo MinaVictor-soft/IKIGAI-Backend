@@ -2,11 +2,8 @@ import { Request, Response } from 'express';
 import { adminService } from './admin.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
 import { getParam, getQuery } from '../../utils/params';
-import path from 'path';
-import fs from 'fs';
 import prisma from '../../config/database';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { ZipArchive } = require('archiver') as { ZipArchive: new (opts?: object) => any };
+import { runBackup, listBackups, getBackupBuffer, restoreBackup } from '../../services/backup.service';
 
 export class AdminController {
   // Sessions
@@ -105,76 +102,44 @@ export class AdminController {
     sendSuccess(res, result);
   }
 
-  async downloadBackup(req: Request, res: Response) {
-    // First do all DB queries (before touching the response stream)
-    const [
-      users, tribes, sessions, attendance, xpTransactions, levels,
-      quizzes, quizQuestions, quizSubmissions, bonusQrCodes, bonusClaims,
-      sportsTeams, teamPlayers, matches, matchEvents, playerStats,
-      auditLogs, systemConfig, adminSettings, publicationCategories,
-      publications, notifications, tournaments, tournamentGroups,
-      tournamentTeams, tournamentMatches,
-    ] = await Promise.all([
-      prisma.user.findMany({ select: { id: true, email: true, name: true, phone: true, role: true, church: true, diocese: true, totalXp: true, status: true, createdAt: true } }),
-      prisma.tribe.findMany(),
-      prisma.conferenceSession.findMany(),
-      prisma.attendance.findMany(),
-      prisma.xpTransaction.findMany(),
-      prisma.level.findMany(),
-      prisma.quiz.findMany(),
-      prisma.quizQuestion.findMany(),
-      prisma.quizSubmission.findMany(),
-      prisma.bonusQrCode.findMany(),
-      prisma.bonusClaim.findMany(),
-      prisma.sportsTeam.findMany(),
-      prisma.teamPlayer.findMany(),
-      prisma.match.findMany(),
-      prisma.matchEvent.findMany(),
-      prisma.playerStats.findMany(),
-      prisma.auditLog.findMany(),
-      prisma.systemConfig.findMany(),
-      prisma.adminSettings.findMany(),
-      prisma.publicationCategory.findMany(),
-      prisma.publication.findMany(),
-      prisma.notification.findMany(),
-      prisma.tournament.findMany(),
-      prisma.tournamentGroup.findMany(),
-      prisma.tournamentTeam.findMany(),
-      prisma.tournamentMatch.findMany(),
-    ]);
+  async triggerBackup(req: Request, res: Response) {
+    const result = await runBackup('manual');
+    sendSuccess(res, {
+      message: 'Backup completed and saved to App Storage',
+      ...result,
+    });
+  }
 
-    const dbData = {
-      exportedAt: new Date().toISOString(),
-      users, tribes, sessions, attendance, xpTransactions, levels,
-      quizzes, quizQuestions, quizSubmissions, bonusQrCodes, bonusClaims,
-      sportsTeams, teamPlayers, matches, matchEvents, playerStats,
-      auditLogs, systemConfig, adminSettings, publicationCategories,
-      publications, notifications, tournaments, tournamentGroups,
-      tournamentTeams, tournamentMatches,
-    };
+  async getBackupList(req: Request, res: Response) {
+    const backups = await listBackups();
+    sendSuccess(res, { backups });
+  }
 
-    // Now stream the ZIP
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `ikigai-backup-${timestamp}.zip`;
-
+  async downloadBackupFile(req: Request, res: Response) {
+    const { filename } = req.params as { filename: string };
+    if (!filename.endsWith('.zip') || filename.includes('/') || filename.includes('..')) {
+      res.status(400).json({ error: 'Invalid filename' });
+      return;
+    }
+    const buffer = await getBackupBuffer(filename);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', String(buffer.length));
+    res.send(buffer);
+  }
 
-    const archive = new ZipArchive({ zlib: { level: 6 } });
-    archive.pipe(res);
-
-    archive.append(JSON.stringify(dbData, null, 2), { name: 'database.json' });
-
-    const uploadsDir = path.join(__dirname, '../../../uploads');
-    if (fs.existsSync(uploadsDir)) {
-      archive.directory(uploadsDir, 'uploads');
+  async restoreBackupFile(req: Request, res: Response) {
+    const { filename } = req.params as { filename: string };
+    if (!filename.endsWith('.zip') || filename.includes('/') || filename.includes('..')) {
+      res.status(400).json({ error: 'Invalid filename' });
+      return;
     }
-
-    await new Promise<void>((resolve, reject) => {
-      archive.on('error', reject);
-      res.on('error', reject);
-      res.on('finish', resolve);
-      archive.finalize();
+    const summary = await restoreBackup(filename);
+    const total = Object.values(summary).reduce((a, b) => a + b, 0);
+    sendSuccess(res, {
+      message: `Database restored from ${filename}`,
+      totalRecords: total,
+      summary,
     });
   }
 
